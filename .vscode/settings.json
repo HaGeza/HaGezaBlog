@@ -1,3 +1,17 @@
 {
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    // Source - https://stackoverflow.com/a/68775403
+    // Posted by Zal, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-03-03, License - CC BY-SA 4.0
+    "tailwindCSS.includeLanguages": {
+        "html": "html",
+        "javascript": "javascript",
+        "css": "css"
+    },
+    "editor.quickSuggestions": {
+        "strings": true
+    },
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
 }

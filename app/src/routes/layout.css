@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-mono: "Fira Code", monospace;
+
+    --color-primary: #333333;
+    --color-muted: #eaeaea;
+    --color-tertiary: #9e9e9e;
+}
+
+.dark {
+    --color-primary: #d0d0d0; 
+    --color-muted: #242424; 
+    --color-tertiary: #6a6a6a;
+}
