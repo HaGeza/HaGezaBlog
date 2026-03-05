@@ -9,7 +9,10 @@
 }
 
 html, body {
-    @apply h-full bg-platinum-900 dark:bg-ocean text-black-600 dark:text-almond-cream-500 transition-colors duration-300;
+    @apply h-full 
+        bg-platinum-900 dark:bg-ocean 
+        text-black-600 dark:text-almond-cream-500 
+        transition-colors duration-300;
 }
 
 /* Typography Classes */
@@ -26,15 +29,26 @@ html, body {
 }
 
 /* Units */
+.card-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+}
+
 .card {
-    @apply mt-4 rounded-lg bg-burnt-peach-600 p-4 dark:bg-ocean-600
+    @apply m-2 rounded-lg
+        bg-burnt-peach-600 p-4 dark:bg-ocean-600
+        hover:scale-105 duration-600;
 }
 
 /* Navbar */
 .navbar {
-    @apply w-full px-6 py-4 bg-burnt-peach-600 dark:bg-ocean-600 shadow-sm border-burnt-peach-200 dark:border-ocean-600 flex items-center justify-between;
+    @apply w-full px-6 py-4
+        bg-burnt-peach-600 dark:bg-ocean-600 
+        shadow-sm border-burnt-peach-200 dark:border-ocean-600
+        flex items-center justify-between;
 }
 
 .theme-toggle {
-    @apply p-2 rounded-lg hover:bg-platinum-700 dark:hover:bg-ocean-400 cursor-pointer;
+    @apply p-2 rounded-lg 
+        hover:bg-platinum-700 dark:hover:bg-ocean-400
+        cursor-pointer;
 }
