@@ -7,8 +7,14 @@
 </script>
 
 <ModeWatcher />
-<button onclick={toggleMode}>
-	<Icon icon="ix:light-dark" width="2.5em" height="2.5em" />
-</button>
 
-{@render children()}
+<div class="navbar">
+	<div class="subtitle">Blog</div>
+	<button class="theme-toggle" onclick={toggleMode}>
+		<Icon icon="ix:light-dark" width="1.5em" height="1.5em" />
+	</button>
+</div>
+
+<main class="p-6">
+	{@render children()}
+</main>

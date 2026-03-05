@@ -1,17 +1,40 @@
 @import 'tailwindcss';
+@import './theme.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-    --font-mono: "Fira Code", monospace;
-
-    --color-primary: #333333;
-    --color-muted: #eaeaea;
-    --color-tertiary: #9e9e9e;
-}
 
 .dark {
-    --color-primary: #d0d0d0; 
-    --color-muted: #242424; 
-    --color-tertiary: #6a6a6a;
+    color-scheme: dark;
+}
+
+html, body {
+    @apply h-full bg-platinum-900 dark:bg-ocean text-black-600 dark:text-almond-cream-500 transition-colors duration-300;
+}
+
+/* Typography Classes */
+.title {
+    @apply text-4xl font-bold mb-4;
+}
+
+.subtitle {
+    @apply text-2xl font-semibold mb-3;
+}
+
+.description {
+    @apply text-lg mb-2;
+}
+
+/* Units */
+.card {
+    @apply mt-4 rounded-lg bg-burnt-peach-600 p-4 dark:bg-ocean-600
+}
+
+/* Navbar */
+.navbar {
+    @apply w-full px-6 py-4 bg-burnt-peach-600 dark:bg-ocean-600 shadow-sm border-burnt-peach-200 dark:border-ocean-600 flex items-center justify-between;
+}
+
+.theme-toggle {
+    @apply p-2 rounded-lg hover:bg-platinum-700 dark:hover:bg-ocean-400 cursor-pointer;
 }
