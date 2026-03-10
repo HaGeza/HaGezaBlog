@@ -1,5 +1,5 @@
 <script lang="ts">
-	import './layout.css';
+	import './style.css';
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import Icon from '@iconify/svelte';
 

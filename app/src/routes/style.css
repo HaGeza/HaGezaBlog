@@ -52,3 +52,13 @@ html, body {
         hover:bg-platinum-700 dark:hover:bg-ocean-400
         cursor-pointer;
 }
+
+/* Posts */
+.post-container {
+    margin: 0 auto;
+}
+
+/* Other */
+.link:hover {
+    text-decoration: underline;
+}
