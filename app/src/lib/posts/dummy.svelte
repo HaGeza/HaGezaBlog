@@ -6,4 +6,18 @@
 	};
 </script>
 
+<canvas id="glcanvas" class="w-full h-full"></canvas>
+
+<script>
+    import { onMount, onDestroy } from 'svelte';
+
+    onMount(async () => {
+        // start miniquad simulation
+    });
+
+    onDestroy(() => {
+        // stop miniquad simulation (if necessary)
+    });
+</script>
+
 <p>Text</p>
