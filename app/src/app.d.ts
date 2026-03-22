@@ -1,6 +1,10 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
+	interface Window {
+		load: (wasmUrl: string) => void;
+		stop_simulation: () => void;
+	}
 	namespace App {
 		// interface Error {}
 		// interface Locals {}
@@ -10,4 +14,4 @@ declare global {
 	}
 }
 
-export {};
+export { };

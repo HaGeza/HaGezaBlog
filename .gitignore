@@ -28,6 +28,7 @@ Cargo.lock
 .svelte-kit/
 package
 node_modules
+**/static/wasm/*
 
 # Vite
 vite.config.js.timestamp-*

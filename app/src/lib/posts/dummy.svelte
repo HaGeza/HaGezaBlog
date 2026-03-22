@@ -6,18 +6,42 @@
 	};
 </script>
 
-<canvas id="glcanvas" class="w-full h-full"></canvas>
-
 <script>
+
     import { onMount, onDestroy } from 'svelte';
 
     onMount(async () => {
-        // start miniquad simulation
+        // Load the script dynamically to ensure the canvas #glcanvas is in the DOM
+        if (!window.load) {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/gh/not-fl3/macroquad@master/js/mq_js_bundle.js";
+            script.onload = () => {
+                window.load("/wasm/hello_world.wasm");
+            };
+            document.head.appendChild(script);
+        } else {
+            // If already loaded, just start the simulation
+            // Note: Macroquad might need a fresh canvas if it already initialized one
+            window.load("/wasm/hello_world.wasm");
+        }
     });
 
     onDestroy(() => {
-        // stop miniquad simulation (if necessary)
+        if (window.stop_simulation) {
+            window.stop_simulation();
+        }
     });
 </script>
+
+<canvas id="glcanvas" class="w-full h-full"></canvas>
+
+<style>
+    #glcanvas {
+        display: block;
+        min-height: 400px;
+    }
+</style>
+
+
 
 <p>Text</p>
