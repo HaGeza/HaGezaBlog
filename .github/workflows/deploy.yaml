@@ -1,0 +1,47 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # 1. Install Rust and the WASM target
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      # 2. Build your Rust simulations
+      - name: Build WASM
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+          mkdir -p app/static/wasm
+          cp target/wasm32-unknown-unknown/release/*.wasm app/static/wasm/
+
+      # 3. Setup Bun
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # 4. Build Svelte app
+      - name: Install & Build Svelte
+        run: |
+          cd app
+          bun install --frozen-lockfile
+          bun run build
+
+      # 5. Deploy to GitHub Pages
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/build
+          force_orphan: true

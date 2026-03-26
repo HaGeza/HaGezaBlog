@@ -1,4 +1,7 @@
 <script lang="ts">
+	export const prerender = true;
+	export const trailingSlash = 'always';
+
 	import './style.css';
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import Icon from '@iconify/svelte';

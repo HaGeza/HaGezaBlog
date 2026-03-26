@@ -1,4 +1,7 @@
 <script context="module">
+    import { asset } from '$app/paths';
+    const sim_path = asset("/templates/sim_loader.html?sim=hello_world")
+
 	export const metadata = {
 		title: 'Dummy post',
 		date: '2026-03-10',
@@ -8,11 +11,10 @@
 
 <div class="aspect-video w-full">
     <iframe 
-        src="/templates/sim_loader.html?sim=hello_world"
+        src={sim_path}
         title="Hello World Sim"
         class="w-full h-full border-none"
     ></iframe>
 </div>
-
 
 <p>Text</p>

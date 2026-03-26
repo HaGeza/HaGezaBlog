@@ -29,7 +29,7 @@
         const simName = params.get('sim');
 
         if (simName) {
-            window.load(`/wasm/${simName}.wasm`);
+            window.load(`../wasm/${simName}.wasm`);
         } else {
             console.error("No simulation name provided in URL parameters.");
         }
