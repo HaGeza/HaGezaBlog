@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
+	import { resolve } from '$app/paths';
 
 	let { title, preview, slug } = $props();
 
@@ -21,7 +22,7 @@
 	}
 </script>
 
-<a href={`/posts/${slug}`}>
+<a href={resolve(`/posts/${slug}`)}>
 	<div class="card">
 		<h3 class="subtitle">{title}</h3>
 		<p class="description">{displayPreview}</p>
