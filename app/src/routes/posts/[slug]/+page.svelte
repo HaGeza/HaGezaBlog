@@ -1,4 +1,5 @@
 <script>
+    import { resolve } from '$app/paths';
 	let { data } = $props();
 </script>
 
@@ -12,6 +13,6 @@
 	</div>
 
 	<div class="mt-8">
-		<a href="/" class="link">← Back to home</a>
+		<a href={resolve("/")} class="link">← Back to home</a>
 	</div>
 </div>

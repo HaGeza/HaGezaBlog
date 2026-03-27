@@ -1,4 +1,4 @@
-<script context="module">
+<script module>
     import { asset } from '$app/paths';
 
 	export const metadata = {
