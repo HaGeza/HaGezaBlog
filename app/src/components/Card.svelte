@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import Icon from '@iconify/svelte';
 
 	let { title, preview, slug } = $props();
@@ -14,7 +14,7 @@
 
 	let isExpandable = $derived(preview.length > PREVIEW_LENGTH);
 
-	function toggleExpand(e) {
+	function toggleExpand(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
 		isExpanded = !isExpanded;
