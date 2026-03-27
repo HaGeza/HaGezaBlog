@@ -23,8 +23,8 @@ jobs:
         run: |
           cd rs_progs
           cargo build --target wasm32-unknown-unknown --release
-          mkdir -p app/static/wasm
-          cp target/wasm32-unknown-unknown/release/*.wasm app/static/wasm/
+          mkdir -p ../app/static/wasm
+          cp target/wasm32-unknown-unknown/release/*.wasm ../app/static/wasm/
 
       # 3. Setup Bun
       - name: Setup Bun
