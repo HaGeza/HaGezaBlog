@@ -21,6 +21,7 @@ jobs:
       # 2. Build your Rust simulations
       - name: Build WASM
         run: |
+          cd rs_progs
           cargo build --target wasm32-unknown-unknown --release
           mkdir -p app/static/wasm
           cp target/wasm32-unknown-unknown/release/*.wasm app/static/wasm/
