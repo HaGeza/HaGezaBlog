@@ -1,17 +1,8 @@
 use macroquad::prelude::*;
 
-static mut RUNNING: bool = true;
-
-#[unsafe(no_mangle)]
-pub extern "C" fn stop_simulation() {
-    unsafe {
-        RUNNING = false;
-    }
-}
-
 #[macroquad::main("Hello World")]
 async fn main() {
-    while unsafe { RUNNING } {
+    loop {
         clear_background(RED);
 
         draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);

@@ -3,7 +3,6 @@
 declare global {
 	interface Window {
 		load: (wasmUrl: string) => void;
-		stop_simulation: () => void;
 	}
 	namespace App {
 		// interface Error {}
