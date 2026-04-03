@@ -10,7 +10,7 @@
 
 <div class="aspect-video w-full">
     <iframe 
-        src={asset("/templates/sim_loader.html?sim=hello_world")}
+        src={asset("/templates/sim_loader.html?sim=electro_magnetic")}
         title="Hello World Sim"
         class="w-full h-full border-none"
     ></iframe>
