@@ -38,9 +38,9 @@ impl Default for CameraWControls {
             longitude: longitude,
             latitude: latitude,
             radius: radius,
-            orbit_sensitivity: vec2(0.25, 0.25),
-            pan_sensitivity: vec2(0.25, 0.25),
-            zoom_sensitivity: 0.1,
+            orbit_sensitivity: vec2(0.5, 0.5),
+            pan_sensitivity: vec2(1.0, 1.0),
+            zoom_sensitivity: 0.05,
         }
     }
 }
@@ -80,12 +80,13 @@ impl CameraWControls {
         if updated {
             position = target + _get_position_in_orbit(self.longitude, self.latitude, self.radius);
 
-            set_camera(&Camera3D {
+            self.camera = Camera3D {
                 position: position,
                 target: target,
                 up: vec3(0., 1., 0.),
                 ..Default::default()
-            });
+            };
+            set_camera(&self.camera);
         }
     }
 }
