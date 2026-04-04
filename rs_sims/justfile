@@ -9,7 +9,6 @@ wasm sim="":
     #!/usr/bin/env bash
     set -e
     
-    # Ensure the target directory exists
     mkdir -p ../app/static/wasm
 
     if [ -z "{{sim}}" ]; then

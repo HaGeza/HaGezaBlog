@@ -1,5 +1,4 @@
-use std::f32::consts::FRAC_PI_4;
-
+use crate::config::load_camera_config;
 use macroquad::prelude::*;
 
 pub struct CameraWControls {
@@ -23,24 +22,26 @@ fn _get_position_in_orbit(longitude: f32, latitude: f32, radius: f32) -> Vec3 {
 
 impl Default for CameraWControls {
     fn default() -> Self {
-        let longitude = 0.;
-        let latitude = FRAC_PI_4;
-        let radius = 5.;
+        let config = load_camera_config().unwrap_or_default();
+
+        let longitude = config.longitude;
+        let latitude = config.latitude;
+        let radius = config.radius;
 
         Self {
             camera: Camera3D {
                 position: _get_position_in_orbit(longitude, latitude, radius),
                 target: vec3(0., 0., 0.),
-                z_near: 0.0001,
-                z_far: 1000.0,
+                z_near: config.z_near,
+                z_far: config.z_far,
                 ..Camera3D::default()
             },
             longitude: longitude,
             latitude: latitude,
             radius: radius,
-            orbit_sensitivity: vec2(0.5, 0.5),
-            pan_sensitivity: vec2(1.0, 1.0),
-            zoom_sensitivity: 0.05,
+            orbit_sensitivity: config.orbit_sensitivity,
+            pan_sensitivity: config.pan_sensitivity,
+            zoom_sensitivity: config.zoom_sensitivity,
         }
     }
 }
