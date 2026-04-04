@@ -52,15 +52,18 @@ impl CameraWControls {
         let mut position = self.camera.position;
         let mut target = self.camera.target;
 
-        // Orbit / Rotate camera around target with left mouse
         if is_mouse_button_down(MouseButton::Left) {
+            // Orbit / Rotate camera around target with left mouse
+            set_cursor_grab(true);
+
             let delta = mouse_delta_position();
             self.longitude += self.orbit_sensitivity.x * delta.x;
             self.latitude = (self.latitude + self.orbit_sensitivity.y * delta.y).clamp(-1.5, 1.5);
             updated = true;
-        }
-        // Move target and camera with right mouse
-        else if is_mouse_button_down(MouseButton::Right) {
+        } else if is_mouse_button_down(MouseButton::Right) {
+            // Move target and camera with right mouse
+            set_cursor_grab(true);
+
             let camera_to_target = target - position;
             let right = camera_to_target.cross(vec3(0., 1., 0.)).normalize();
             let up = right.cross(camera_to_target).normalize();
@@ -68,11 +71,12 @@ impl CameraWControls {
             let delta_2d = mouse_delta_position() * self.pan_sensitivity;
             target += right * delta_2d.x + up * delta_2d.y;
             updated = true;
-        }
-        // Zoom with mouse wheel
-        else {
+        } else {
+            set_cursor_grab(false);
+
             let (_, wheel_y) = mouse_wheel();
             if wheel_y != 0.0 {
+                // Zoom with mouse wheel
                 self.radius = (self.radius - wheel_y * self.zoom_sensitivity).max(0.01);
                 updated = true;
             }

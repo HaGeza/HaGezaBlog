@@ -1,6 +1,7 @@
 use macroquad::math::{Vec2, vec2};
 use serde_yaml::Value;
 use std::f32::consts::FRAC_PI_4;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs;
 
 fn _parse_f32(value: &Value) -> f32 {
