@@ -5,18 +5,31 @@ camera:
   latitude: 0.7853981633974483  # π/4 radians (45 degrees)
   radius: 5.0
 
-  # Mouse sensitivity for orbiting around the target
-  orbit_sensitivity:
+  # Mouse sensitivity for rotating around the target
+  rotate_mouse_sensitivity:
     x: 0.5
     y: 0.5
 
   # Mouse sensitivity for panning the camera
-  pan_sensitivity:
+  pan_mouse_sensitivity:
     x: 1.0
     y: 1.0
 
   # Mouse wheel sensitivity for zooming
-  zoom_sensitivity: 0.05
+  zoom_mouse_sensitivity: 0.05
+
+  # Touch sensitivity for rotating around the target
+  rotate_touch_sensitivity:
+    x: 0.025
+    y: 0.025
+
+  # Touch sensitivity for panning the camera
+  pan_touch_sensitivity:
+    x: 0.2
+    y: 0.2
+
+  # Touch wheel sensitivity for zooming
+  zoom_touch_sensitivity: 0.025
 
   # Camera clipping planes
   z_near: 0.0001
