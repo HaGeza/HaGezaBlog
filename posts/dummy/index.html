@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link href="../../_app/immutable/entry/start.DlQoi62M.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/CZNf7l2p.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/f21HpiVl.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/CyvSOsIO.js" rel="modulepreload">
+		<link href="../../_app/immutable/entry/app.CyHcaqJd.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/PPVm8Dsz.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/CSzKe34m.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/B2G74MyZ.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/xEVRynu4.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/_hsPAK6u.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/BbFEqnHT.js" rel="modulepreload">
+		<link href="../../_app/immutable/nodes/0.BDTGjwre.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/hMjTsX2i.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/C183Kb8v.js" rel="modulepreload">
+		<link href="../../_app/immutable/nodes/3.DFfdHnAT.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/B8A9NhAT.js" rel="modulepreload">
+		<!--1funsus--><!--[!--><!--]--> <!----><script>(function setInitialMode({ defaultMode = "system", themeColors: themeColors2, darkClassNames: darkClassNames2 = ["dark"], lightClassNames: lightClassNames2 = [], defaultTheme = "", modeStorageKey: modeStorageKey2 = "mode-watcher-mode", themeStorageKey: themeStorageKey2 = "mode-watcher-theme" }) {
+  const rootEl = document.documentElement;
+  const mode = localStorage.getItem(modeStorageKey2) ?? defaultMode;
+  const theme = localStorage.getItem(themeStorageKey2) ?? defaultTheme;
+  const light = mode === "light" || mode === "system" && window.matchMedia("(prefers-color-scheme: light)").matches;
+  if (light) {
+    if (darkClassNames2.length)
+      rootEl.classList.remove(...darkClassNames2.filter(Boolean));
+    if (lightClassNames2.length)
+      rootEl.classList.add(...lightClassNames2.filter(Boolean));
+  } else {
+    if (lightClassNames2.length)
+      rootEl.classList.remove(...lightClassNames2.filter(Boolean));
+    if (darkClassNames2.length)
+      rootEl.classList.add(...darkClassNames2.filter(Boolean));
+  }
+  rootEl.style.colorScheme = light ? "light" : "dark";
+  if (themeColors2) {
+    const themeMetaEl = document.querySelector('meta[name="theme-color"]');
+    if (themeMetaEl) {
+      themeMetaEl.setAttribute("content", mode === "light" ? themeColors2.light : themeColors2.dark);
+    }
+  }
+  if (theme) {
+    rootEl.setAttribute("data-theme", theme);
+    localStorage.setItem(themeStorageKey2, theme);
+  }
+  localStorage.setItem(modeStorageKey2, mode);
+})({"defaultMode":"system","darkClassNames":["dark"],"lightClassNames":[],"defaultTheme":"","modeStorageKey":"mode-watcher-mode","themeStorageKey":"mode-watcher-theme"});</script><!----><!---->
+		<link href="../../_app/immutable/assets/0.5rF1OWmZ.css" rel="stylesheet">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents"><!--[--><!--[--><!--[--><!--[!--><!--]--><!----> <div class="navbar"><div class="subtitle">Blog</div> <button class="theme-toggle"><!--[!--><!--]--><!----></button></div> <main class="p-6"><!--[--><div class="post-container"><h1 class="title">Dummy post</h1> <p class="subtitle">2026-03-10</p> <div class="post-content"><!--[--><div class="aspect-video w-full"><iframe src="../../templates/sim_loader.html?sim=electro_magnetic" title="Hello World Sim" class="w-full h-full border-none"></iframe></div> <p>Text</p><!--]--></div> <div class="mt-8"><a href="../../" class="link">← Back to home</a></div></div><!--]--><!----></main><!--]--><!--]--> <!--[!--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_1mmkuor = {
+						base: new URL("../..", location).pathname.slice(0, -1),
+						assets: "/HaGezaBlog"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("../../_app/immutable/entry/start.DlQoi62M.js"),
+						import("../../_app/immutable/entry/app.CyHcaqJd.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 3],
+							data: [{type:"data",data:null,uses:{},slash:"always"},null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
