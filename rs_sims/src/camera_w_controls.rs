@@ -10,9 +10,13 @@ pub struct CameraWControls {
     latitude: f32,
     radius: f32,
 
-    orbit_sensitivity: Vec2,
-    pan_sensitivity: Vec2,
-    zoom_sensitivity: f32,
+    rotate_mouse_sensitivity: Vec2,
+    pan_mouse_sensitivity: Vec2,
+    zoom_mouse_sensitivity: f32,
+
+    rotate_touch_sensitivity: Vec2,
+    pan_touch_sensitivity: Vec2,
+    zoom_touch_sensitivity: f32,
 
     touch_zoom_threshold: f32,
 
@@ -47,9 +51,12 @@ impl Default for CameraWControls {
             longitude: longitude,
             latitude: latitude,
             radius: radius,
-            orbit_sensitivity: config.orbit_sensitivity,
-            pan_sensitivity: config.pan_sensitivity,
-            zoom_sensitivity: config.zoom_sensitivity,
+            rotate_mouse_sensitivity: config.rotate_mouse_sensitivity,
+            pan_mouse_sensitivity: config.pan_mouse_sensitivity,
+            zoom_mouse_sensitivity: config.zoom_mouse_sensitivity,
+            rotate_touch_sensitivity: config.rotate_touch_sensitivity,
+            pan_touch_sensitivity: config.pan_touch_sensitivity,
+            zoom_touch_sensitivity: config.zoom_touch_sensitivity,
             touch_zoom_threshold: config.touch_zoom_threshold,
             updated: false,
             touch_positions: HashMap::default(),
@@ -64,25 +71,25 @@ enum TouchAction {
 }
 
 impl CameraWControls {
-    fn _rotate(&mut self, delta: Vec2) {
-        self.longitude += self.orbit_sensitivity.x * delta.x;
-        self.latitude = (self.latitude + self.orbit_sensitivity.y * delta.y).clamp(-1.5, 1.5);
+    fn _rotate(&mut self, delta: Vec2, sensitivity: Vec2) {
+        self.longitude += sensitivity.x * delta.x;
+        self.latitude = (self.latitude + sensitivity.y * delta.y).clamp(-1.5, 1.5);
         self.updated = true;
     }
 
-    fn _pan(&mut self, delta: Vec2) -> Vec3 {
+    fn _pan(&mut self, delta: Vec2, sensitivity: Vec2) -> Vec3 {
         let camera_to_target = self.camera.target - self.camera.position;
         let right = camera_to_target.cross(vec3(0., 1., 0.)).normalize();
         let up = right.cross(camera_to_target).normalize();
 
         self.updated = true;
-        let adjusted_delta = delta * self.pan_sensitivity;
+        let adjusted_delta = delta * sensitivity;
         self.camera.target + right * adjusted_delta.x + up * adjusted_delta.y
     }
 
-    fn _zoom(&mut self, delta: f32) {
+    fn _zoom(&mut self, delta: f32, sensitivity: f32) {
         if delta != 0.0 {
-            self.radius = (self.radius - delta * self.zoom_sensitivity).max(0.01);
+            self.radius = (self.radius - delta * sensitivity).max(0.01);
             self.updated = true;
         }
     }
@@ -141,25 +148,25 @@ impl CameraWControls {
         if touches.is_empty() {
             if is_mouse_button_down(MouseButton::Left) {
                 set_cursor_grab(true);
-                self._rotate(mouse_delta_position());
+                self._rotate(mouse_delta_position(), self.rotate_mouse_sensitivity);
             } else if is_mouse_button_down(MouseButton::Right) {
                 set_cursor_grab(true);
-                target = self._pan(mouse_delta_position());
+                target = self._pan(mouse_delta_position(), self.pan_mouse_sensitivity);
             } else {
                 set_cursor_grab(false);
-                self._zoom(mouse_wheel().1);
+                self._zoom(mouse_wheel().1, self.zoom_mouse_sensitivity);
             }
         } else {
             println!("touches: {:?}", &touches);
             match self._process_touches(&touches) {
                 Some(TouchAction::Rotate(delta)) => {
-                    self._rotate(delta);
+                    self._rotate(delta, self.rotate_touch_sensitivity);
                 },
                 Some(TouchAction::Pan(delta)) => {
-                    target = self._pan(delta);
+                    target = self._pan(delta, self.pan_touch_sensitivity);
                 },
                 Some(TouchAction::Zoom(delta)) => {
-                    self._zoom(delta);
+                    self._zoom(delta, self.zoom_touch_sensitivity);
                 },
                 None => {},
             }
