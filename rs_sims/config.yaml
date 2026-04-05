@@ -5,7 +5,7 @@ camera:
   latitude: 0.7853981633974483  # π/4 radians (45 degrees)
   radius: 5.0
 
-  # Mouse sensitivity for rotateing around the target
+  # Mouse sensitivity for rotating around the target
   rotate_mouse_sensitivity:
     x: 0.5
     y: 0.5
@@ -18,7 +18,7 @@ camera:
   # Mouse wheel sensitivity for zooming
   zoom_mouse_sensitivity: 0.05
 
-  # Touch sensitivity for rotateing around the target
+  # Touch sensitivity for rotating around the target
   rotate_touch_sensitivity:
     x: 0.025
     y: 0.025
