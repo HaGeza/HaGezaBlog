@@ -1,0 +1,26 @@
+# Camera Configuration
+camera:
+  # Initial camera position
+  longitude: 0.0
+  latitude: 0.7853981633974483  # π/4 radians (45 degrees)
+  radius: 5.0
+
+  # Mouse sensitivity for orbiting around the target
+  orbit_sensitivity:
+    x: 0.5
+    y: 0.5
+
+  # Mouse sensitivity for panning the camera
+  pan_sensitivity:
+    x: 1.0
+    y: 1.0
+
+  # Mouse wheel sensitivity for zooming
+  zoom_sensitivity: 0.05
+
+  # Camera clipping planes
+  z_near: 0.0001
+  z_far: 1000.0
+
+  # Threshold for touch distance change required for zooming, as screen diagonal ratio
+  touch_zoom_threshold: 0.01

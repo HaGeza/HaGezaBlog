@@ -12,5 +12,6 @@ async fn main() {
         draw_grid(20, 1.0, GRAY, DARKGRAY);
 
         next_frame().await;
+        clear_background(BLACK);
     }
 }

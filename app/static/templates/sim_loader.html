@@ -21,6 +21,11 @@
 </head>
 
 <body>
+    <script>
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        }, false);
+    </script>
     <canvas id="glcanvas"></canvas>
     <script src="https://cdn.jsdelivr.net/gh/not-fl3/macroquad@master/js/mq_js_bundle.js"></script>
     <script>
