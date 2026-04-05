@@ -29,6 +29,7 @@ pub struct CameraWControlsConfig {
     pub orbit_sensitivity: Vec2,
     pub pan_sensitivity: Vec2,
     pub zoom_sensitivity: f32,
+    pub touch_zoom_threshold: f32,
     pub z_near: f32,
     pub z_far: f32,
 }
@@ -42,6 +43,7 @@ impl Default for CameraWControlsConfig {
             orbit_sensitivity: vec2(0.5, 0.5),
             pan_sensitivity: vec2(1.0, 1.0),
             zoom_sensitivity: 0.05,
+            touch_zoom_threshold: 0.01,
             z_near: 0.0001,
             z_far: 1000.0,
         }
@@ -58,6 +60,7 @@ pub fn load_camera_config() -> Result<CameraWControlsConfig, Box<dyn std::error:
         orbit_sensitivity: _parse_vec2(&camera["orbit_sensitivity"]),
         pan_sensitivity: _parse_vec2(&camera["pan_sensitivity"]),
         zoom_sensitivity: _parse_f32(&camera["zoom_sensitivity"]),
+        touch_zoom_threshold: _parse_f32(&camera["touch_zoom_threshold"]),
         z_near: _parse_f32(&camera["z_near"]),
         z_far: _parse_f32(&camera["z_far"]),
     })

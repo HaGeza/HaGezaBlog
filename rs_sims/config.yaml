@@ -21,3 +21,6 @@ camera:
   # Camera clipping planes
   z_near: 0.0001
   z_far: 1000.0
+
+  # Threshold for touch distance change required for zooming, as screen diagonal ratio
+  touch_zoom_threshold: 0.01
