@@ -1,4 +1,5 @@
 //! Module for creating Lathe Meshes, see: https://en.wikipedia.org/wiki/Lathe_(graphics) for example
+
 use super::common::is_non_empty_triangle;
 use std::f32::consts::PI;
 
@@ -10,7 +11,7 @@ use macroquad::{
 };
 
 /** Return the vertices of the lathe mesh created  */
-fn create_lathe_vertices(profile: &[Vec2], num_rings: u32) -> Vec<Vertex> {
+fn create_lathe_vertices(profile: &[Vec2], num_rings: u16) -> Vec<Vertex> {
     let mut vertices = vec![];
     for ring in 0..num_rings {
         for pt in profile {
@@ -27,7 +28,7 @@ fn create_lathe_vertices(profile: &[Vec2], num_rings: u32) -> Vec<Vertex> {
     vertices
 }
 
-fn create_lathe_indices(profile: &[Vec2], num_rings: u32, vertices: &Vec<Vertex>) -> Vec<u16> {
+fn create_lathe_indices(profile: &[Vec2], num_rings: u16, vertices: &Vec<Vertex>) -> Vec<u16> {
     let mut indices = vec![];
     for ring in 0..num_rings {
         for pt_ind in 0..profile.len() - 1 {
@@ -62,7 +63,7 @@ fn create_lathe_indices(profile: &[Vec2], num_rings: u32, vertices: &Vec<Vertex>
  * Create a mesh by rotating a 2D `profile` around the Y axis `num_rings` times.
  * The `profile` points are assumed to be clockwise ordered.
  */
-pub fn create_lathe_mesh(profile: &[Vec2], num_rings: u32) -> Mesh {
+pub fn create_lathe_mesh(profile: &[Vec2], num_rings: u16) -> Mesh {
     let vertices = create_lathe_vertices(profile, num_rings);
     let indices = create_lathe_indices(profile, num_rings, &vertices);
     Mesh {
@@ -71,12 +72,6 @@ pub fn create_lathe_mesh(profile: &[Vec2], num_rings: u32) -> Mesh {
         texture: None,
     }
 }
-
-// pub fn create_lightbulb_mesh(position: &Vec3) -> Mesh {}
-
-// pub fn create_light_switch_mesh(position: &Vec3) -> Mesh {}
-
-// pub fn create_wire_loop_mesh(positions: &[Vec3]) -> Mesh {}
 
 #[cfg(test)]
 mod tests {
