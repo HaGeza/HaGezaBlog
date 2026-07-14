@@ -9,6 +9,10 @@ pub mod mesh {
         pub mod wire;
     }
 }
+pub mod shape {
+    pub mod common;
+}
 pub(crate) mod util {
+    pub(crate) mod linalg;
     pub(crate) mod vec;
 }
