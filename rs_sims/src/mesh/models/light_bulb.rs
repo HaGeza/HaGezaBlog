@@ -4,74 +4,134 @@ use macroquad::{
     math::{Vec2, vec2},
     models::Mesh,
 };
+use thiserror::Error;
 
-use crate::shape::common::get_semicircle;
+use crate::shape::common::{get_quadratic_bezier, get_semicircle};
 use crate::{
     mesh::{common::combine_meshes, lathe_mesh::create_lathe_mesh},
     shape::common::intersect,
 };
 
-enum LightBulbGlassProfileGenerationError {
-    TooFewSemicircleSection,
-    TooSmallSemicircleAngle,
-    TooLargeSemicircleAngle,
+struct LightBulbGlassProfileParams {
+    glass_num_sections: usize,
+    glass_angle: f32,
+    glass_radius: f32,
+    cap_half_width: f32,
+    connection_num_sections: usize,
 }
 
-const fn create_light_bulb_glass_profile(
-    semicircle_sections: usize,
-    semicircle_angle: f32,
-    semicircle_radius: f32,
-    cap_half_width: f32,
-) -> Result<Vec<Vec2>, LightBulbGlassProfileGenerationError> {
-    if semicircle_sections < 2 {
-        return Err(LightBulbGlassProfileGenerationError::TooFewSemicircleSection);
+#[derive(Error, Debug)]
+enum LightBulbGlassProfileError {
+    #[error("too few glass sections, cannot create semicircle")]
+    TooFewSections,
+    #[error("too small glass angle, glass and cap profiles wouldn't intersect below glass")]
+    TooSmallAngle,
+    #[error("too large glass angle, semicircle wouldn't fit in profile")]
+    TooLargeAngle,
+}
+
+fn create_light_bulb_glass_profile(
+    params: LightBulbGlassProfileParams,
+) -> Result<Vec<Vec2>, LightBulbGlassProfileError> {
+    if params.glass_num_sections < 2 {
+        return Err(LightBulbGlassProfileError::TooFewSections);
     }
-    if semicircle_angle <= FRAC_PI_2 {
-        return Err(LightBulbGlassProfileGenerationError::TooSmallSemicircleAngle);
+    if params.glass_angle <= FRAC_PI_2 {
+        return Err(LightBulbGlassProfileError::TooSmallAngle);
     }
-    if semicircle_angle >= PI {
-        return Err(LightBulbGlassProfileGenerationError::TooSmallSemicircleAngle);
+    if params.glass_angle >= PI {
+        return Err(LightBulbGlassProfileError::TooLargeAngle);
     }
 
-    let glass_semicircle: Vec<Vec2> =
-        get_semicircle(semicircle_radius, FRAC_PI_2 - semicircle_angle, FRAC_PI_2, semicircle_sections);
+    let semicircle: Vec<Vec2> =
+        get_semicircle(params.glass_radius, FRAC_PI_2 - params.glass_angle, FRAC_PI_2, params.glass_num_sections);
 
-    if glass_semicircle[0].x <= 0.
-        || glass_semicircle[0].y >= 0.
-        || glass_semicircle[1].x <= 0.
-        || glass_semicircle[1].y >= 0.
-    {
+    if semicircle[0].x <= 0. || semicircle[0].y >= 0. || semicircle[1].x <= 0. || semicircle[1].y >= 0. {
         // The last section of the glass bulb profile should be in the fourth quarter.
         // If it isn't and `theta` is in the correct range, the resolution is not high enough
-        return Err(LightBulbGlassProfileGenerationError::TooFewSemicircleSection);
+        return Err(LightBulbGlassProfileError::TooFewSections);
     }
 
-    let glass_curve_a = glass_semicircle[1];
-    let glass_line = [&glass_curve_a, &glass_semicircle[0]];
-    let cap_line = [&vec2(cap_half_width, 0.), &vec2(cap_half_width, 1.)];
-    let Some(glass_curve_b) = intersect(glass_line, cap_line) else {
+    let connection_a = semicircle[1];
+    let glass_line = [&connection_a, &semicircle[0]];
+    let cap_line = [&vec2(params.cap_half_width, 0.), &vec2(params.cap_half_width, 1.)];
+    let Some(connection_b) = intersect(glass_line, cap_line) else {
         panic!("");
     };
 
-    let glass_curve_c = vec2(glass_curve_b.x, glass_curve_b.y - glass_curve_a.distance(glass_curve_b));
+    let connection_c = vec2(connection_b.x, connection_b.y - connection_a.distance(connection_b));
 
-    let glass_curve: Vec<Vec2> = get_quadratic_bezier(glass_curve_a, glass_curve_b, glass_curve_c);
+    let connection: Vec<Vec2> =
+        get_quadratic_bezier(&connection_a, &connection_b, &connection_c, params.connection_num_sections);
 
-    Ok([glass_curve, glass_semicircle[1..]].concat())
+    Ok([connection, semicircle[1..].to_vec()].concat())
 }
 
-fn create_light_bulb_cap_profile(glass_bottom_y: f32, cap_half_width: f32, cap_height: f32) -> Vec<Vec2> {
+struct LightBulbCapProfileParams {
+    glass_bottom_y: f32,
+    cap_half_width: f32,
+    cap_height: f32,
+}
+
+fn create_light_bulb_cap_profile(params: LightBulbCapProfileParams) -> Vec<Vec2> {
     vec![
-        vec2(cap_half_width, glass_bottom_y),
-        vec2(cap_half_width, glass_bottom_y - cap_height),
+        vec2(params.cap_half_width, params.glass_bottom_y),
+        vec2(params.cap_half_width, params.glass_bottom_y - params.cap_height),
     ]
 }
 
-pub fn create_light_bulb_mesh(light_bulb_num_rings: u16) -> Mesh {
-    let glass_profile = create_light_bulb_glass_profile();
-    let cap_profile = create_light_bulb_cap_profile(glass_profile[0]);
+struct LightBulbMeshParams {
+    glass_profile_params: LightBulbGlassProfileParams,
+    cap_profile_params: LightBulbCapProfileParams,
+    num_rings: usize,
+}
 
-    combine_meshes(&create_lathe_mesh(&glass_profile, light_bulb_num_rings), &create_lathe_mesh(&cap_profile, 2))
+#[derive(Error, Debug)]
+enum LightBulbMeshError {
+    #[error("failed to create glass profile: {0}")]
+    GlassError(LightBulbGlassProfileError),
+}
+
+fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulbMeshError> {
+    let glass_profile = match create_light_bulb_glass_profile(params.glass_profile_params) {
+        Ok(glass_profile) => glass_profile,
+        Err(glass_profile_error) => return Err(LightBulbMeshError::GlassError(glass_profile_error)),
+    };
+    let cap_profile = create_light_bulb_cap_profile(params.cap_profile_params);
+
+    Ok(combine_meshes(
+        &create_lathe_mesh(&glass_profile, params.num_rings),
+        &create_lathe_mesh(&cap_profile, params.num_rings),
+    ))
+}
+
+const GLASS_DEFAULT_RADIUS: f32 = 2.;
+const CAP_DEFAULT_HALF_WIDTH: f32 = GLASS_DEFAULT_RADIUS / 2.;
+const CAP_DEFAULT_HEIGHT: f32 = CAP_DEFAULT_HALF_WIDTH;
+const CAP_DEFAULT_BOTTOM: f32 = -GLASS_DEFAULT_RADIUS - CAP_DEFAULT_HEIGHT;
+
+const GLASS_DEFAULT_NUM_SECTIONS: usize = 20;
+const GLASS_DEFAULT_ANGLE: f32 = 3. * FRAC_PI_4;
+const CONNECTION_DEFAULT_NUM_SECTIONS: usize = GLASS_DEFAULT_NUM_SECTIONS / 5;
+const NUM_RINGS: usize = GLASS_DEFAULT_NUM_SECTIONS + CONNECTION_DEFAULT_NUM_SECTIONS;
+
+pub fn get_light_bulb_mesh() -> Mesh {
+    create_light_bulb_mesh(LightBulbMeshParams {
+        glass_profile_params: LightBulbGlassProfileParams {
+            glass_num_sections: GLASS_DEFAULT_NUM_SECTIONS,
+            glass_angle: GLASS_DEFAULT_ANGLE,
+            glass_radius: GLASS_DEFAULT_RADIUS,
+            cap_half_width: CAP_DEFAULT_HALF_WIDTH,
+            connection_num_sections: CONNECTION_DEFAULT_NUM_SECTIONS,
+        },
+        cap_profile_params: LightBulbCapProfileParams {
+            glass_bottom_y: CAP_DEFAULT_BOTTOM,
+            cap_half_width: CAP_DEFAULT_HALF_WIDTH,
+            cap_height: CAP_DEFAULT_HEIGHT,
+        },
+        num_rings: NUM_RINGS,
+    })
+    .unwrap()
 }
 
 #[cfg(test)]
