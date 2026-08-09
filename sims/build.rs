@@ -34,12 +34,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cpp_dir = Path::new("cpp");
     println!("cargo:rerun-if-changed=cpp");
 
-    // 1. Compile C++ code to WASM using C++23
+    // 1. Compile C++ code to WASM using C++26
     let mut build = cc::Build::new();
-    build
-        .cpp(true) // Explicitly enable C++ mode
-        .std("c++23") // Enable C++23 for constexpr / static_assert
-        .cpp_link_stdlib(None);
+    build.cpp(true).std("c++26").cpp_link_stdlib(None).include("cpp");
 
     let cpp_files = collect_files(cpp_dir, "cpp");
     for file in &cpp_files {
@@ -48,11 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     build.compile("cpp_math");
 
     // 2. Generate Rust bindings using bindgen
-    let mut builder = bindgen::builder().use_core();
-    let hpp_files = collect_files(cpp_dir, "hpp");
-    for file in &hpp_files {
-        builder = builder.header(file.to_str().unwrap());
-    }
+    let mut builder = bindgen::builder().header("cpp/ffi.hpp").use_core();
 
     if target.contains("wasm32") {
         // Use a 32-bit target (i686) instead of 64-bit (x86_64)
