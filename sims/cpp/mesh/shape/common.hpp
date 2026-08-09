@@ -2,7 +2,7 @@
 #include <numbers>
 #include <vector>
 
-#include "types/vec.hpp"
+#include "ffi_types/vec.hpp"
 #include "util/trig.hpp"
 
 template <std::size_t NumSections>

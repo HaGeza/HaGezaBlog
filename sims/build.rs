@@ -1,4 +1,3 @@
-use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -19,22 +18,9 @@ fn collect_files(dir: &Path, extension: &str) -> Vec<PathBuf> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let target = env::var("TARGET").unwrap_or_default();
-
-    // 0. Use zig for wasm32; Not sure if this is useful
-    unsafe {
-        if target.contains("wasm32") {
-            // Point cc to the Zig toolchain wrappers
-            env::set_var("CC", "zig cc");
-            env::set_var("CXX", "zig c++");
-            env::set_var("AR", "zig ar");
-        }
-    }
-
     let cpp_dir = Path::new("cpp");
-    println!("cargo:rerun-if-changed=cpp");
 
-    // 1. Compile C++ code to WASM using C++26
+    // 1. Compile C++ files into a static library ("libcpp_math.a")
     let mut build = cc::Build::new();
     build.cpp(true).std("c++26").cpp_link_stdlib(None).include("cpp");
 
@@ -44,19 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     build.compile("cpp_math");
 
-    // 2. Generate Rust bindings using bindgen
-    let mut builder = bindgen::builder().header("cpp/ffi.hpp").use_core();
-
-    if target.contains("wasm32") {
-        // Use a 32-bit target (i686) instead of 64-bit (x86_64)
-        // This prevents 32-bit vs 64-bit pointer/size_t struct misalignment bugs
-        builder = builder.clang_arg("--target=i686-unknown-linux-gnu");
-    }
-
-    let bindings = builder.generate()?;
-    let out_path = PathBuf::from(env::var("OUT_DIR")?);
-    bindings.write_to_file(out_path.join("bindings.rs"))?;
-
+    // 2. Re-run build script if any C++ file or build.rs changes
     println!("cargo:rerun-if-changed=cpp");
     println!("cargo:rerun-if-changed=build.rs");
 
