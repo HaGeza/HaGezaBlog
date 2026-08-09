@@ -1,0 +1,13 @@
+cargo zigbuild --release --bin electro_magnetic
+   Compiling sims v0.1.0 (/Users/pelokbal/Projects/blog/sims)
+warning: function `get_semicircle` is never used
+  --> /Users/pelokbal/Projects/blog/sims/target/release/build/sims-da59762dd5657862/out/bindings.rs:18:12
+   |
+18 |     pub fn get_semicircle(radius: f32, start_radian: f3...
+   |            ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `sims` (bin "electro_magnetic") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 3.08s
+./target/release/electro_magnetic
