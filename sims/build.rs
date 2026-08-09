@@ -1,6 +1,22 @@
 use std::env;
 use std::error::Error;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+fn collect_files(dir: &Path, extension: &str) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                files.extend(collect_files(&path, extension));
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some(extension) {
+                files.push(path);
+            }
+        }
+    }
+    files
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let target = env::var("TARGET").unwrap_or_default();
@@ -15,18 +31,28 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    let cpp_dir = Path::new("cpp");
+    println!("cargo:rerun-if-changed=cpp");
+
     // 1. Compile C++ code to WASM using C++23
     let mut build = cc::Build::new();
     build
         .cpp(true) // Explicitly enable C++ mode
         .std("c++23") // Enable C++23 for constexpr / static_assert
-        .cpp_link_stdlib(None)
-        .file("cpp/tmp.cpp");
+        .cpp_link_stdlib(None);
 
+    let cpp_files = collect_files(cpp_dir, "cpp");
+    for file in &cpp_files {
+        build.file(file);
+    }
     build.compile("cpp_math");
 
     // 2. Generate Rust bindings using bindgen
-    let mut builder = bindgen::builder().header("cpp/tmp.hpp").use_core();
+    let mut builder = bindgen::builder().use_core();
+    let hpp_files = collect_files(cpp_dir, "hpp");
+    for file in &hpp_files {
+        builder = builder.header(file.to_str().unwrap());
+    }
 
     if target.contains("wasm32") {
         // Use a 32-bit target (i686) instead of 64-bit (x86_64)
