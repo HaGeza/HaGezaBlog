@@ -13,14 +13,14 @@ wasm sim="":
 
     if [ -z "{{sim}}" ]; then
         echo "Building all binaries..."
-        cargo zigbuild --target=wasm32-unknown-unknown --release
+        cargo zigbuild --target=wasm32-wasip1 --release
         
-        find target/wasm32-unknown-unknown/release -maxdepth 1 -name "*.wasm" -exec cp {} ../app/static/wasm/ \;
+        find target/wasm32-wasip1/release -maxdepth 1 -name "*.wasm" -exec cp {} ../app/static/wasm/ \;
         echo "Successfully copied all WASM files to ../app/static/wasm/"
     else
         echo "Building simulation: {{sim}}..."
-        cargo zigbuild --target=wasm32-unknown-unknown --release --bin {{sim}}
-        cp target/wasm32-unknown-unknown/release/{{sim}}.wasm ../app/static/wasm/
+        cargo zigbuild --target=wasm32-wasip1 --release --bin {{sim}}
+        cp target/wasm32-wasip1/release/{{sim}}.wasm ../app/static/wasm/
         echo "Successfully copied {{sim}}.wasm to ../app/static/wasm/"
     fi
 
@@ -28,3 +28,8 @@ wasm sim="":
 clean:
     cargo clean
     rm -rf ../app/static/wasm/*.wasm
+
+# Build and run a simulation locally
+run_sim sim="":
+    cargo zigbuild --release --bin {{sim}}
+    ./target/release/{{sim}}

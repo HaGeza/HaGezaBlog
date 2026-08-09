@@ -5,11 +5,21 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn Error>> {
     let target = env::var("TARGET").unwrap_or_default();
 
-    // 1. Compile C++ code to WASM using C++20
+    // 0. Use zig for wasm32; Not sure if this is useful
+    unsafe {
+        if target.contains("wasm32") {
+            // Point cc to the Zig toolchain wrappers
+            env::set_var("CC", "zig cc");
+            env::set_var("CXX", "zig c++");
+            env::set_var("AR", "zig ar");
+        }
+    }
+
+    // 1. Compile C++ code to WASM using C++23
     let mut build = cc::Build::new();
     build
         .cpp(true) // Explicitly enable C++ mode
-        .std("c++23") // Enable C++20 for constexpr / static_assert
+        .std("c++23") // Enable C++23 for constexpr / static_assert
         .cpp_link_stdlib(None)
         .file("cpp/tmp.cpp");
 

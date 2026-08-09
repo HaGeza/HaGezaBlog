@@ -1,1 +1,1 @@
-int tmp_fn();
+float tmp_fn();
