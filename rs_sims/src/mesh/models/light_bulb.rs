@@ -7,10 +7,7 @@ use macroquad::{
 use thiserror::Error;
 
 use crate::shape::common::{get_quadratic_bezier, get_semicircle};
-use crate::{
-    mesh::{common::combine_meshes, lathe_mesh::create_lathe_mesh},
-    shape::common::intersect,
-};
+use crate::{mesh::lathe_mesh::create_lathe_mesh, shape::common::intersect};
 
 struct LightBulbGlassProfileParams {
     glass_num_sections: usize,
@@ -52,14 +49,14 @@ fn create_light_bulb_glass_profile(
         return Err(LightBulbGlassProfileError::TooFewSections);
     }
 
-    let connection_a = semicircle[1];
-    let glass_line = [&connection_a, &semicircle[0]];
+    let connection_c = semicircle[1];
+    let glass_line = [&connection_c, &semicircle[0]];
     let cap_line = [&vec2(params.cap_half_width, 0.), &vec2(params.cap_half_width, 1.)];
     let Some(connection_b) = intersect(glass_line, cap_line) else {
         panic!("");
     };
 
-    let connection_c = vec2(connection_b.x, connection_b.y - connection_a.distance(connection_b));
+    let connection_a = vec2(connection_b.x, connection_b.y - connection_c.distance(connection_b));
 
     let connection: Vec<Vec2> =
         get_quadratic_bezier(&connection_a, &connection_b, &connection_c, params.connection_num_sections);
@@ -76,7 +73,7 @@ struct LightBulbCapProfileParams {
 fn create_light_bulb_cap_profile(params: LightBulbCapProfileParams) -> Vec<Vec2> {
     vec![
         vec2(params.cap_half_width, params.glass_bottom_y),
-        vec2(params.cap_half_width, params.glass_bottom_y - params.cap_height),
+        vec2(params.cap_half_width, params.glass_bottom_y + params.cap_height),
     ]
 }
 
@@ -99,15 +96,12 @@ fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulb
     };
     let cap_profile = create_light_bulb_cap_profile(params.cap_profile_params);
 
-    Ok(combine_meshes(
-        &create_lathe_mesh(&glass_profile, params.num_rings),
-        &create_lathe_mesh(&cap_profile, params.num_rings),
-    ))
+    Ok(create_lathe_mesh(&[cap_profile, glass_profile].concat(), params.num_rings))
 }
 
 const GLASS_DEFAULT_RADIUS: f32 = 2.;
-const CAP_DEFAULT_HALF_WIDTH: f32 = GLASS_DEFAULT_RADIUS / 2.;
-const CAP_DEFAULT_HEIGHT: f32 = CAP_DEFAULT_HALF_WIDTH;
+const CAP_DEFAULT_HALF_WIDTH: f32 = GLASS_DEFAULT_RADIUS / 2.5;
+const CAP_DEFAULT_HEIGHT: f32 = CAP_DEFAULT_HALF_WIDTH * 1.5;
 const CAP_DEFAULT_BOTTOM: f32 = -GLASS_DEFAULT_RADIUS - CAP_DEFAULT_HEIGHT;
 
 const GLASS_DEFAULT_NUM_SECTIONS: usize = 20;
