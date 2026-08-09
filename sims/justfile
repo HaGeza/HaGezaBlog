@@ -13,13 +13,13 @@ wasm sim="":
 
     if [ -z "{{sim}}" ]; then
         echo "Building all binaries..."
-        cargo build --release --target wasm32-unknown-unknown
+        cargo zigbuild --target=wasm32-unknown-unknown --release
         
         find target/wasm32-unknown-unknown/release -maxdepth 1 -name "*.wasm" -exec cp {} ../app/static/wasm/ \;
         echo "Successfully copied all WASM files to ../app/static/wasm/"
     else
         echo "Building simulation: {{sim}}..."
-        cargo build --release --target wasm32-unknown-unknown --bin {{sim}}
+        cargo zigbuild --target=wasm32-unknown-unknown --release --bin {{sim}}
         cp target/wasm32-unknown-unknown/release/{{sim}}.wasm ../app/static/wasm/
         echo "Successfully copied {{sim}}.wasm to ../app/static/wasm/"
     fi
