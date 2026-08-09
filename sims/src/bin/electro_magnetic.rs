@@ -6,7 +6,7 @@ mod cpp {
         include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
     }
 
-    pub fn tmp() -> i32 {
+    pub fn tmp() -> f32 {
         unsafe { bindings::tmp_fn() }
     }
 }
