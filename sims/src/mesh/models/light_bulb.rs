@@ -11,7 +11,7 @@ use crate::{mesh::lathe_mesh::create_lathe_mesh, shape::common::intersect};
 
 struct LightBulbGlassProfileParams {
     glass_num_sections: usize,
-    glass_angle: f32,
+    glass_radians: f32,
     glass_radius: f32,
     cap_half_width: f32,
     connection_num_sections: usize,
@@ -33,15 +33,17 @@ fn create_light_bulb_glass_profile(
     if params.glass_num_sections < 2 {
         return Err(LightBulbGlassProfileError::TooFewSections);
     }
-    if params.glass_angle <= FRAC_PI_2 {
+    if params.glass_radians <= FRAC_PI_2 {
         return Err(LightBulbGlassProfileError::TooSmallAngle);
     }
-    if params.glass_angle >= PI {
+    if params.glass_radians >= PI {
         return Err(LightBulbGlassProfileError::TooLargeAngle);
     }
 
     let semicircle: Vec<Vec2> =
-        get_semicircle(params.glass_radius, FRAC_PI_2 - params.glass_angle, FRAC_PI_2, params.glass_num_sections);
+        get_semicircle(params.glass_radius, FRAC_PI_2 - params.glass_radians, FRAC_PI_2, params.glass_num_sections);
+
+    println!("Got {:?} from Rust", semicircle);
 
     if semicircle[0].x <= 0. || semicircle[0].y >= 0. || semicircle[1].x <= 0. || semicircle[1].y >= 0. {
         // The last section of the glass bulb profile should be in the fourth quarter.
@@ -105,7 +107,7 @@ const CAP_DEFAULT_HEIGHT: f32 = CAP_DEFAULT_HALF_WIDTH * 1.5;
 const CAP_DEFAULT_BOTTOM: f32 = -GLASS_DEFAULT_RADIUS - CAP_DEFAULT_HEIGHT;
 
 const GLASS_DEFAULT_NUM_SECTIONS: usize = 20;
-const GLASS_DEFAULT_ANGLE: f32 = 3. * FRAC_PI_4;
+const GLASS_DEFAULT_RADIANS: f32 = 3. * FRAC_PI_4;
 const CONNECTION_DEFAULT_NUM_SECTIONS: usize = GLASS_DEFAULT_NUM_SECTIONS / 5;
 const NUM_RINGS: usize = GLASS_DEFAULT_NUM_SECTIONS + CONNECTION_DEFAULT_NUM_SECTIONS;
 
@@ -113,7 +115,7 @@ pub fn get_light_bulb_mesh() -> Mesh {
     create_light_bulb_mesh(LightBulbMeshParams {
         glass_profile_params: LightBulbGlassProfileParams {
             glass_num_sections: GLASS_DEFAULT_NUM_SECTIONS,
-            glass_angle: GLASS_DEFAULT_ANGLE,
+            glass_radians: GLASS_DEFAULT_RADIANS,
             glass_radius: GLASS_DEFAULT_RADIUS,
             cap_half_width: CAP_DEFAULT_HALF_WIDTH,
             connection_num_sections: CONNECTION_DEFAULT_NUM_SECTIONS,

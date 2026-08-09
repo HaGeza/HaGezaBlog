@@ -1,5 +1,5 @@
 #pragma once
-#include "types/vec.hpp"
+#include "ffi_types/vec.hpp"
 
 #ifdef __cplusplus
 extern "C" {
