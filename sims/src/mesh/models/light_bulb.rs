@@ -25,6 +25,8 @@ enum LightBulbGlassProfileError {
     TooSmallAngle,
     #[error("too large glass angle, semicircle wouldn't fit in profile")]
     TooLargeAngle,
+    #[error("glass and cap lines don't intersect")]
+    NoIntersection,
 }
 
 fn create_light_bulb_glass_profile(
@@ -43,8 +45,6 @@ fn create_light_bulb_glass_profile(
     let semicircle: Vec<Vec2> =
         get_semicircle(params.glass_radius, FRAC_PI_2 - params.glass_radians, FRAC_PI_2, params.glass_num_sections);
 
-    println!("Got {:?} from Rust", semicircle);
-
     if semicircle[0].x <= 0. || semicircle[0].y >= 0. || semicircle[1].x <= 0. || semicircle[1].y >= 0. {
         // The last section of the glass bulb profile should be in the fourth quarter.
         // If it isn't and `theta` is in the correct range, the resolution is not high enough
@@ -55,7 +55,7 @@ fn create_light_bulb_glass_profile(
     let glass_line = [&connection_c, &semicircle[0]];
     let cap_line = [&vec2(params.cap_half_width, 0.), &vec2(params.cap_half_width, 1.)];
     let Some(connection_b) = intersect(glass_line, cap_line) else {
-        panic!("");
+        return Err(LightBulbGlassProfileError::NoIntersection);
     };
 
     let connection_a = vec2(connection_b.x, connection_b.y - connection_c.distance(connection_b));
