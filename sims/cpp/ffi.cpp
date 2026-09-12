@@ -1,9 +1,8 @@
 #include "ffi.hpp"
 
 #include "mesh/shape/common.hpp"
+#include "util/constants.hpp"
 
-static constexpr float PI = std::numbers::pi_v<float>;
-static constexpr float FRAC_PI_2 = PI / 2.0;
 static constexpr unsigned int SEMICIRCLE_NUM_SECTIONS = 20;
 static constexpr float GLASS_RADIUS = 2.0;
 static constexpr float GLASS_RADIANS = 3.0 * PI / 4.0;

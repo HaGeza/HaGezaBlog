@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/opt/homebrew/Cellar/llvm/22.1.8/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++26",
+            "includePath": [
+                "${workspaceFolder}/sims/cpp",
+                "/opt/homebrew/Cellar/llvm/22.1.8/include/"
+            ],
+            "defines": [],
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
