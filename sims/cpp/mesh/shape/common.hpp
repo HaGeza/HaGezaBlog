@@ -1,13 +1,12 @@
 #pragma once
+#include <array>
 #include <cstdlib>
 #include <numbers>
 #include <optional>
-#include <ranges>
-#include <util/constants.hpp>
-#include <util/linalg.hpp>
-#include <vector>
 
 #include "ffi_types/vec.hpp"
+#include "util/constants.hpp"
+#include "util/linalg.hpp"
 #include "util/trig.hpp"
 
 template <std::size_t NumSections>
