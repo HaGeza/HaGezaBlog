@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <numbers>
@@ -40,4 +41,24 @@ constexpr std::optional<Vec2> intersect(const Vec2 line_a[2], const Vec2 line_b[
     const Vec2 mat_x[2] = {line_dets, x_diffs}, mat_y[2] = {line_dets, y_diffs};
 
     return std::make_optional(Vec2{det_2d(mat_x) / det_ab_transpose, det_2d(mat_y) / det_ab_transpose});
+}
+
+template <std::size_t NumSections>
+constexpr std::array<Vec2, NumSections + 1> get_quadratic_bezier(const Vec2 pts[3]) {
+    std::array<Vec2, NumSections + 1> curve;
+    for (size_t pt_ind = 0; pt_ind <= NumSections; ++pt_ind) {
+        float ratio = static_cast<float>(pt_ind) / NumSections;
+        curve[pt_ind] = (pts[0] * (1.0f - ratio) + pts[1] * ratio) * (1.0f - ratio) +
+                        (pts[1] * (1.0f - ratio) + pts[2] * ratio) * ratio;
+    }
+    return curve;
+}
+
+template <std::size_t NumSectionsA, std::size_t NumSectionsB>
+constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 1> combine_profiles(
+    const std::array<Vec2, NumSectionsA> profile_a, const std::array<Vec2, NumSectionsB> profile_b) {
+    std::array<Vec2, NumSectionsA + NumSectionsB + 1> profile;
+    std::ranges::copy(profile_a, profile.begin());
+    std::ranges::copy(profile_b, profile.begin() + NumSectionsA + 1);
+    return profile;
 }

@@ -1,6 +1,6 @@
 #include "ffi.hpp"
 
-#include "mesh/shape/common.hpp"
+#include "shape/common.hpp"
 #include "util/constants.hpp"
 
 static constexpr unsigned int SEMICIRCLE_NUM_SECTIONS = 20;
