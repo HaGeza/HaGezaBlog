@@ -1,16 +1,32 @@
 #include "ffi.hpp"
 
-#include "shape/common.hpp"
+#include "mesh/models/light_bulb.hpp"
 #include "util/constants.hpp"
 
-static constexpr unsigned int SEMICIRCLE_NUM_SECTIONS = 20;
-static constexpr float GLASS_RADIUS = 2.0;
-static constexpr float GLASS_RADIANS = 3.0 * PI / 4.0;
+const float HEAD_RADIUS = 2.0f;
+const float HEAD_RADIANS = 3.0f * FRAC_PI_4;
 
-static constexpr auto SEMICIRCLE =
-    get_semicircle<SEMICIRCLE_NUM_SECTIONS>(GLASS_RADIUS, FRAC_PI_2 - GLASS_RADIANS, FRAC_PI_2);
+const float BOTTOM_HALF_WIDTH = HEAD_RADIUS / 2.5f;
+const float BOTTOM_HEIGHT = BOTTOM_HALF_WIDTH * 1.5f;
+const float BOTTOM_START_Y = -HEAD_RADIUS - BOTTOM_HEIGHT;
+
+const size_t HEAD_NUM_SECTIONS = 20;
+const size_t NECK_NUM_SECTIONS = HEAD_NUM_SECTIONS / 5;
+const size_t NUM_RINGS = HEAD_NUM_SECTIONS + NECK_NUM_SECTIONS;
+
+static constexpr auto LIGHT_BULB_MESH_DATA =
+    create_light_bulb_mesh_data<NECK_NUM_SECTIONS, HEAD_NUM_SECTIONS, NUM_RINGS>(
+        LightBulbTopProfileParams{
+            HEAD_RADIANS,
+            HEAD_RADIUS,
+            BOTTOM_HALF_WIDTH,
+        },
+        LightBulbBottomProfileParams{
+            BOTTOM_START_Y,
+            BOTTOM_HALF_WIDTH,
+            BOTTOM_HEIGHT,
+        });
 
 extern "C" {
-const struct Vec2 *get_baked_semicircle_ptr() { return SEMICIRCLE.data(); }
-const unsigned int get_baked_semicircle_num_sections() { return SEMICIRCLE_NUM_SECTIONS; }
+const struct MeshData get_baked_light_bulb_mesh_data() { return LIGHT_BULB_MESH_DATA; }
 }

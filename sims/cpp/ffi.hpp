@@ -1,12 +1,11 @@
 #pragma once
-#include "ffi_types/vec.hpp"
+#include "ffi_types/mesh_data.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const struct Vec2 *get_baked_semicircle_ptr();
-const unsigned int get_baked_semicircle_num_sections();
+const struct MeshData *get_baked_light_bulb_mesh_data();
 
 #ifdef __cplusplus
 }

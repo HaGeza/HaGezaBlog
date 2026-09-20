@@ -28,8 +28,8 @@
 
 /// Parameters for constructing the profile of the top of the light bulb
 struct LightBulbTopProfileParams {
-    float head_semicircle_radians;
-    float head_semicircle_radius;
+    float head_radians;
+    float head_radius;
     float bottom_half_width;
 };
 
@@ -40,16 +40,15 @@ consteval std::array<Vec2, NeckNumSections + HeadNumSections + 1> create_light_b
     if (HeadNumSections < 2) {
         throw std::invalid_argument("too few head semicircle sections, cannot create semicircle");
     }
-    if (params.head_semicircle_radians <= FRAC_PI_2) {
+    if (params.head_radians <= FRAC_PI_2) {
         throw std::invalid_argument(
             "too small head semicircle angle, head and collar profiles don't intersect below head");
     }
-    if (params.head_semicircle_radians >= PI) {
+    if (params.head_radians >= PI) {
         throw std::invalid_argument("too large head semicircle angle, semicircle wouldn't fit in profile");
     }
 
-    auto head = get_semicircle<HeadNumSections>(params.head_semicircle_radius,
-                                                FRAC_PI_2 - params.head_semicircle_radians, FRAC_PI_2);
+    auto head = get_semicircle<HeadNumSections>(params.head_radius, FRAC_PI_2 - params.head_radians, FRAC_PI_2);
     if (head[0].x <= 0.0 || head[0].y >= 0.0 || head[1].x <= 0.0 || head[1].y >= 0.0) {
         // The last section of the head profile should be in the fourth quarter.
         // If it isn't and `theta` is in the correct range, the resolution is not high enough
@@ -66,13 +65,13 @@ consteval std::array<Vec2, NeckNumSections + HeadNumSections + 1> create_light_b
     };
     Vec2 neck_b = neck_b_opt.value();
     Vec2 neck_a = Vec2{neck_b.x, neck_b.y - neck_c.distance(neck_b)};
-    auto neck = get_quadratic_bezier<NeckNumSections>(neck_a, neck_b, neck_c);
+    auto neck = get_quadratic_bezier<NeckNumSections>({neck_a, neck_b, neck_c});
 
     return combine_profiles(neck, head | std::views::drop(1));
 }
 
 struct LightBulbBottomProfileParams {
-    float border_y;
+    float start_y;
     float half_width;
     float height;
 };
@@ -80,8 +79,8 @@ struct LightBulbBottomProfileParams {
 /// Create the profile of the bottom (non-glass part) of the light bulb
 consteval std::array<Vec2, 2> create_light_bulb_bottom_profile(LightBulbBottomProfileParams params) {
     return std::array<Vec2, 2>({
-        Vec2{params.half_width, params.border_y},
-        Vec2{params.half_width, params.border_y + params.height},
+        Vec2{params.half_width, params.start_y},
+        Vec2{params.half_width, params.start_y + params.height},
     });
 }
 
