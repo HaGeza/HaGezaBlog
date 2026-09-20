@@ -57,7 +57,7 @@ constexpr std::array<Vec2, NumSections + 1> get_quadratic_bezier(const Vec2 pts[
 template <std::size_t NumSectionsA, std::size_t NumSectionsB>
 constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 2> combine_profiles(
     const std::array<Vec2, NumSectionsA + 1> profile_a, const std::array<Vec2, NumSectionsB + 1> profile_b) {
-    constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 2> profile;
+    std::array<Vec2, NumSectionsA + NumSectionsB + 2> profile;
 
     size_t pt_ind = 0;
     for (Vec2 pt : profile_a) profile[pt_ind++] = pt;

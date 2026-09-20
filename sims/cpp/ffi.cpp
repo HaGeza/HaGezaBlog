@@ -14,7 +14,7 @@ constexpr size_t HEAD_NUM_SECTIONS = 20;
 constexpr size_t NECK_NUM_SECTIONS = HEAD_NUM_SECTIONS / 5;
 constexpr size_t NUM_RINGS = HEAD_NUM_SECTIONS + NECK_NUM_SECTIONS;
 
-static constexpr auto LIGHT_BULB_MESH_DATA =
+MeshData LIGHT_BULB_MESH_DATA =
     create_light_bulb_mesh_data<NECK_NUM_SECTIONS, HEAD_NUM_SECTIONS, NUM_RINGS>(
         LightBulbTopProfileParams{
             HEAD_RADIANS,

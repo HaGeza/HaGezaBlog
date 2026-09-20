@@ -1,11 +1,12 @@
 use macroquad::prelude::*;
-use sims::{camera_w_controls::CameraWControls, mesh::models::light_bulb::get_light_bulb_mesh};
+use sims::camera_w_controls::CameraWControls;
 use std::slice;
 
 unsafe extern "C" {
     fn get_baked_light_bulb_mesh_data() -> MeshData;
 }
 
+#[repr(C)]
 struct MeshData {
     vertex_count: usize,
     vertices: *const Vertex,
@@ -27,6 +28,7 @@ fn get_baked_light_bulb_mesh() -> Mesh {
 #[macroquad::main("Electro-Magnetic Fields")]
 async fn main() {
     let lightbulb = get_baked_light_bulb_mesh();
+    println!("Vertices: {:?}", lightbulb.vertices);
 
     let mut camera = CameraWControls::default();
     camera.update(true);
