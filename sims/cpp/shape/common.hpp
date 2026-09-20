@@ -8,7 +8,7 @@
 #include "ffi_types/vec.hpp"
 #include "util/constants.hpp"
 #include "util/linalg.hpp"
-#include "util/trig.hpp"
+#include "util/math.hpp"
 
 template <std::size_t NumSections>
 constexpr std::array<Vec2, NumSections + 1> get_semicircle(float radius, float start_radian, float end_radian) {
@@ -19,7 +19,7 @@ constexpr std::array<Vec2, NumSections + 1> get_semicircle(float radius, float s
     std::array<Vec2, NumSections + 1> points{};
     for (std::size_t i = 0; i <= NumSections; ++i) {
         const float theta = start_radian + radian_step * static_cast<float>(i);
-        points[i] = Vec2{consteval_cos(theta) * radius, consteval_sin(theta) * radius};
+        points[i] = Vec2{constexpr_cos(theta) * radius, constexpr_sin(theta) * radius};
     }
     return points;
 }
@@ -35,7 +35,7 @@ constexpr std::optional<Vec2> intersect(const Vec2 line_a[2], const Vec2 line_b[
     const Vec2 diffs_mat[2] = {x_diffs, y_diffs};
     float det_ab_transpose = det_2d(diffs_mat);
 
-    if (std::abs(det_ab_transpose) < EPSILON) return std::nullopt;
+    if (constexpr_abs(det_ab_transpose) < EPSILON) return std::nullopt;
 
     Vec2 line_dets = Vec2{det_2d(line_a), det_2d(line_b)};
     const Vec2 mat_x[2] = {line_dets, x_diffs}, mat_y[2] = {line_dets, y_diffs};
@@ -55,10 +55,12 @@ constexpr std::array<Vec2, NumSections + 1> get_quadratic_bezier(const Vec2 pts[
 }
 
 template <std::size_t NumSectionsA, std::size_t NumSectionsB>
-constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 1> combine_profiles(
-    const std::array<Vec2, NumSectionsA> profile_a, const std::array<Vec2, NumSectionsB> profile_b) {
-    std::array<Vec2, NumSectionsA + NumSectionsB + 1> profile;
-    std::ranges::copy(profile_a, profile.begin());
-    std::ranges::copy(profile_b, profile.begin() + NumSectionsA + 1);
+constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 2> combine_profiles(
+    const std::array<Vec2, NumSectionsA + 1> profile_a, const std::array<Vec2, NumSectionsB + 1> profile_b) {
+    constexpr std::array<Vec2, NumSectionsA + NumSectionsB + 2> profile;
+
+    size_t pt_ind = 0;
+    for (Vec2 pt : profile_a) profile[pt_ind++] = pt;
+    for (Vec2 pt : profile_b) profile[pt_ind++] = pt;
     return profile;
 }

@@ -3,16 +3,16 @@
 #include "mesh/models/light_bulb.hpp"
 #include "util/constants.hpp"
 
-const float HEAD_RADIUS = 2.0f;
-const float HEAD_RADIANS = 3.0f * FRAC_PI_4;
+constexpr float HEAD_RADIANS = 3.0f * FRAC_PI_4;
+constexpr float HEAD_RADIUS = 2.0f;
 
-const float BOTTOM_HALF_WIDTH = HEAD_RADIUS / 2.5f;
-const float BOTTOM_HEIGHT = BOTTOM_HALF_WIDTH * 1.5f;
-const float BOTTOM_START_Y = -HEAD_RADIUS - BOTTOM_HEIGHT;
+constexpr float BOTTOM_HALF_WIDTH = HEAD_RADIUS / 2.5f;
+constexpr float BOTTOM_HEIGHT = BOTTOM_HALF_WIDTH * 1.5f;
+constexpr float BOTTOM_START_Y = -HEAD_RADIUS - BOTTOM_HEIGHT;
 
-const size_t HEAD_NUM_SECTIONS = 20;
-const size_t NECK_NUM_SECTIONS = HEAD_NUM_SECTIONS / 5;
-const size_t NUM_RINGS = HEAD_NUM_SECTIONS + NECK_NUM_SECTIONS;
+constexpr size_t HEAD_NUM_SECTIONS = 20;
+constexpr size_t NECK_NUM_SECTIONS = HEAD_NUM_SECTIONS / 5;
+constexpr size_t NUM_RINGS = HEAD_NUM_SECTIONS + NECK_NUM_SECTIONS;
 
 static constexpr auto LIGHT_BULB_MESH_DATA =
     create_light_bulb_mesh_data<NECK_NUM_SECTIONS, HEAD_NUM_SECTIONS, NUM_RINGS>(

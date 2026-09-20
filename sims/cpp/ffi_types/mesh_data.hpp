@@ -4,7 +4,7 @@
 
 struct MeshData {
     unsigned int vertex_count;
-    Vertex *vertices;
+    const Vertex *vertices;
     unsigned int index_count;
-    unsigned short *indices;
+    const unsigned short *indices;
 };

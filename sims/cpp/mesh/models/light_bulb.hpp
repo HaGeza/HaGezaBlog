@@ -35,7 +35,7 @@ struct LightBulbTopProfileParams {
 
 /// Create the profile of the the top (glass part) of the light bulb
 template <std::size_t NeckNumSections, std::size_t HeadNumSections>
-consteval std::array<Vec2, NeckNumSections + HeadNumSections + 1> create_light_bulb_top_profile(
+constexpr std::array<Vec2, NeckNumSections + HeadNumSections + 1> create_light_bulb_top_profile(
     LightBulbTopProfileParams params) {
     if (HeadNumSections < 2) {
         throw std::invalid_argument("too few head semicircle sections, cannot create semicircle");
@@ -65,9 +65,12 @@ consteval std::array<Vec2, NeckNumSections + HeadNumSections + 1> create_light_b
     };
     Vec2 neck_b = neck_b_opt.value();
     Vec2 neck_a = Vec2{neck_b.x, neck_b.y - neck_c.distance(neck_b)};
-    auto neck = get_quadratic_bezier<NeckNumSections>({neck_a, neck_b, neck_c});
+    Vec2 bezier_pts[3] = {neck_a, neck_b, neck_c};
+    auto neck = get_quadratic_bezier<NeckNumSections>(bezier_pts);
 
-    return combine_profiles(neck, head | std::views::drop(1));
+    std::array<Vec2, HeadNumSections> head_except_first;
+    std::copy(head.begin() + 1, head.end(), head_except_first.begin());
+    return combine_profiles<NeckNumSections, HeadNumSections - 1>(neck, head_except_first);
 }
 
 struct LightBulbBottomProfileParams {
@@ -77,7 +80,7 @@ struct LightBulbBottomProfileParams {
 };
 
 /// Create the profile of the bottom (non-glass part) of the light bulb
-consteval std::array<Vec2, 2> create_light_bulb_bottom_profile(LightBulbBottomProfileParams params) {
+constexpr std::array<Vec2, 2> create_light_bulb_bottom_profile(LightBulbBottomProfileParams params) {
     return std::array<Vec2, 2>({
         Vec2{params.half_width, params.start_y},
         Vec2{params.half_width, params.start_y + params.height},
@@ -85,19 +88,19 @@ consteval std::array<Vec2, 2> create_light_bulb_bottom_profile(LightBulbBottomPr
 }
 
 template <std::size_t NeckNumSections, std::size_t HeadNumSections, std::size_t NumRings>
-consteval MeshData create_light_bulb_mesh_data(LightBulbTopProfileParams top_profile_params,
-                                               LightBulbBottomProfileParams bottom_profile_params) {
-    auto profile =
-        combine_profiles(create_light_bulb_bottom_profile(bottom_profile_params),
-                         create_light_bulb_top_profile<NeckNumSections, HeadNumSections>(top_profile_params));
+constexpr MeshData create_light_bulb_mesh_data(const LightBulbTopProfileParams& top_profile_params,
+                                               const LightBulbBottomProfileParams& bottom_profile_params) {
+    constexpr auto profile = combine_profiles<1, NeckNumSections + HeadNumSections>(
+        create_light_bulb_bottom_profile(bottom_profile_params),
+        create_light_bulb_top_profile<NeckNumSections, HeadNumSections>(top_profile_params));
 
-    auto vertices = create_lathe_vertices<1 + NeckNumSections + HeadNumSections, NumRings>(profile);
-    auto indices = create_lathe_indices(profile, vertices);
+    constexpr auto vertices = create_lathe_vertices<NeckNumSections + HeadNumSections + 2, NumRings>(profile);
+    constexpr auto indices = create_lathe_indices<NeckNumSections + HeadNumSections + 2, NumRings>(profile);
 
     return MeshData{
         static_cast<unsigned int>(vertices.size()),
-        vertices.data,
+        &vertices[0],
         static_cast<unsigned int>(indices.size()),
-        indices.data,
+        &indices[0],
     };
 }

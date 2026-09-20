@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cmath>
+#include "util/math.hpp"
 
-#include "util/constants.hpp"
 struct Vec2 {
     float x, y;
 
@@ -14,11 +13,11 @@ struct Vec2 {
 
     constexpr Vec2 operator/(const float scalar) const { return Vec2{x / scalar, y / scalar}; }
 
-    bool relative_eq(const Vec2 &other) { return (fabsf(x - other.x) < EPSILON) && (fabsf(y - other.y) < EPSILON); }
+    constexpr bool relative_eq(const Vec2 &other) { return relative_eqf(x, other.x) && relative_eqf(y, other.y); }
 
-    float length() { return sqrtf(x * x + y * y); }
+    constexpr float length() { return constexpr_sqrt(x * x + y * y); }
 
-    float distance(const Vec2 &other) { return (*this - other).length(); }
+    constexpr float distance(const Vec2 &other) { return (*this - other).length(); }
 };
 
 struct Vec3 {
@@ -28,8 +27,8 @@ struct Vec3 {
 
     constexpr Vec3 operator/(const float scalar) const { return Vec3{x / scalar, y / scalar, z / scalar}; }
 
-    bool relative_eq(const Vec3 &other) {
-        return (fabsf(x - other.x) < EPSILON) && (fabsf(y - other.y) < EPSILON) && (fabsf(z - other.z) < EPSILON);
+    constexpr bool relative_eq(const Vec3 &other) {
+        return relative_eqf(x, other.x) && relative_eqf(y, other.y) && relative_eqf(z, other.z);
     }
 };
 

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-const struct MeshData *get_baked_light_bulb_mesh_data();
+const struct MeshData get_baked_light_bulb_mesh_data();
 
 #ifdef __cplusplus
 }
