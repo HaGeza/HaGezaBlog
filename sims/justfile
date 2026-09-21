@@ -23,6 +23,11 @@ wasm sim="":
         cp target/wasm32-unknown-unknown/release/{{sim}}.wasm ../app/static/wasm/
         echo "Successfully copied {{sim}}.wasm to ../app/static/wasm/"
     fi
+    #
+# Build and run a simulation locally
+run_sim sim="":
+    cargo build --release --bin {{sim}}
+    ./target/release/{{sim}}
 
 # Clean build artifacts
 clean:

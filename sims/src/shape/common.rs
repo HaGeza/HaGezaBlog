@@ -37,8 +37,8 @@ pub fn intersect(line_a: [&Vec2; 2], line_b: [&Vec2; 2]) -> Option<Vec2> {
 }
 
 pub fn get_quadratic_bezier(pt_0: &Vec2, pt_1: &Vec2, pt_2: &Vec2, num_sections: usize) -> Vec<Vec2> {
-    return (0..num_sections)
-        .map(|i| i as f32 / (num_sections - 1) as f32)
+    return (0..=num_sections)
+        .map(|i| i as f32 / num_sections as f32)
         .map(|t| (1. - t) * ((1. - t) * *pt_0 + t * *pt_1) + t * ((1. - t) * *pt_1 + t * *pt_2))
         .collect();
 }
