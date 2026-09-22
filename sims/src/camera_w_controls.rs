@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::config::load_camera_config;
+use crate::vec3_relative_eq;
 use macroquad::prelude::*;
 
 pub struct CameraWControls {
@@ -25,11 +26,7 @@ pub struct CameraWControls {
 }
 
 fn _get_camera_relative_position(longitude: f32, latitude: f32, radius: f32) -> Vec3 {
-    vec3(
-        radius * latitude.cos() * longitude.sin(),
-        radius * latitude.sin(),
-        radius * latitude.cos() * longitude.cos(),
-    )
+    vec3(radius * latitude.cos() * longitude.sin(), radius * latitude.sin(), radius * latitude.cos() * longitude.cos())
 }
 
 impl Default for CameraWControls {
@@ -120,13 +117,10 @@ impl CameraWControls {
         } else if touches.len() > 1 {
             let curr_dist = touches[0].position.distance(touches[1].position);
 
-            let deltas = (
-                self._process_touch_and_get_delta(&touches[0]),
-                self._process_touch_and_get_delta(&touches[1]),
-            );
+            let deltas =
+                (self._process_touch_and_get_delta(&touches[0]), self._process_touch_and_get_delta(&touches[1]));
 
-            let prev_dist =
-                (touches[0].position - deltas.0).distance(touches[1].position - deltas.1);
+            let prev_dist = (touches[0].position - deltas.0).distance(touches[1].position - deltas.1);
 
             let dist_delta = curr_dist - prev_dist;
             if dist_delta.abs() < self.touch_zoom_threshold {
@@ -145,19 +139,19 @@ impl CameraWControls {
         simulate_mouse_with_touch(false);
         let touches = touches();
 
+        let delta = mouse_delta_position();
         if touches.is_empty() {
             if is_mouse_button_down(MouseButton::Left) {
                 set_cursor_grab(true);
-                self._rotate(mouse_delta_position(), self.rotate_mouse_sensitivity);
+                self._rotate(delta, self.rotate_mouse_sensitivity);
             } else if is_mouse_button_down(MouseButton::Right) {
                 set_cursor_grab(true);
-                target = self._pan(mouse_delta_position(), self.pan_mouse_sensitivity);
+                target = self._pan(delta, self.pan_mouse_sensitivity);
             } else {
                 set_cursor_grab(false);
                 self._zoom(mouse_wheel().1, self.zoom_mouse_sensitivity);
             }
         } else {
-            println!("touches: {:?}", &touches);
             match self._process_touches(&touches) {
                 Some(TouchAction::Rotate(delta)) => {
                     self._rotate(delta, self.rotate_touch_sensitivity);
@@ -173,13 +167,17 @@ impl CameraWControls {
         }
 
         if self.updated {
-            let position =
-                target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
+            let position = target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
+            if !vec3_relative_eq!(position, self.camera.position) || !vec3_relative_eq!(target, self.camera.target) {
+                println!("{:?}", delta);
+            }
 
             self.camera = Camera3D {
                 position: position,
                 target: target,
                 up: vec3(0., 1., 0.),
+                z_near: self.camera.z_near,
+                z_far: self.camera.z_far,
                 ..Default::default()
             };
             set_camera(&self.camera);
