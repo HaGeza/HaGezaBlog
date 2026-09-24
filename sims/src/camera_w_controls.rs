@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::config::load_camera_config;
-use crate::vec3_relative_eq;
 use macroquad::prelude::*;
 
 pub struct CameraWControls {
@@ -22,6 +21,7 @@ pub struct CameraWControls {
     touch_zoom_threshold: f32,
 
     updated: bool,
+    mouse_delta: Vec2,
     touch_positions: HashMap<u64, Vec2>,
 }
 
@@ -56,6 +56,7 @@ impl Default for CameraWControls {
             zoom_touch_sensitivity: config.zoom_touch_sensitivity,
             touch_zoom_threshold: config.touch_zoom_threshold,
             updated: false,
+            mouse_delta: Vec2::ZERO,
             touch_positions: HashMap::default(),
         }
     }
@@ -132,6 +133,22 @@ impl CameraWControls {
         None
     }
 
+    fn _get_corrected_mouse_delta(&self) -> Vec2 {
+        // `set_cursor_grab` is used so that the cursor cannot leave the iframe in the browser.
+        // This is needed, because macroquad will not recognize events, like mouse release, outside
+        // of the window, causing rotation / pan to still be active if the button is released outside
+        // of the window.
+        //
+        // Howerver, using `set_cursor_grab` causes the mouse to reposition in the first frame with mouse movement,
+        // after the grab is set, which causes a huge `mouse_delta_position()` leading to sudden jump.
+        // To avoid this, the delta of the first frame after a frame without movement is clamped.
+        if self.mouse_delta == vec2(0.0, 0.0) {
+            mouse_delta_position().clamp(-0.01 * Vec2::ONE, 0.01 * Vec2::ONE)
+        } else {
+            mouse_delta_position()
+        }
+    }
+
     pub fn update(&mut self, force_update: bool) {
         self.updated = force_update;
         let mut target = self.camera.target;
@@ -139,14 +156,15 @@ impl CameraWControls {
         simulate_mouse_with_touch(false);
         let touches = touches();
 
-        let delta = mouse_delta_position();
         if touches.is_empty() {
             if is_mouse_button_down(MouseButton::Left) {
                 set_cursor_grab(true);
-                self._rotate(delta, self.rotate_mouse_sensitivity);
+                self.mouse_delta = self._get_corrected_mouse_delta();
+                self._rotate(self.mouse_delta, self.rotate_mouse_sensitivity);
             } else if is_mouse_button_down(MouseButton::Right) {
                 set_cursor_grab(true);
-                target = self._pan(delta, self.pan_mouse_sensitivity);
+                self.mouse_delta = self._get_corrected_mouse_delta();
+                target = self._pan(self.mouse_delta, self.pan_mouse_sensitivity);
             } else {
                 set_cursor_grab(false);
                 self._zoom(mouse_wheel().1, self.zoom_mouse_sensitivity);
@@ -168,9 +186,6 @@ impl CameraWControls {
 
         if self.updated {
             let position = target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
-            if !vec3_relative_eq!(position, self.camera.position) || !vec3_relative_eq!(target, self.camera.target) {
-                println!("{:?}", delta);
-            }
 
             self.camera = Camera3D {
                 position: position,
