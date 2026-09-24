@@ -21,10 +21,10 @@ jobs:
       # 2. Build your Rust simulations
       - name: Build WASM
         run: |
-          cd rs_sims
+          cd sims
           cargo build --target wasm32-unknown-unknown --release
           mkdir -p ../app/static/wasm
-          cp target/wasm32-unknown-unknown/release/*.wasm ../app/static/wasm/
+          find target/wasm32-unknown-unknown/release -maxdepth 1 -name "*.wasm" -exec cp {} ../app/static/wasm/ \;
 
       # 3. Setup Bun
       - name: Setup Bun
