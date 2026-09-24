@@ -21,15 +21,12 @@ pub struct CameraWControls {
     touch_zoom_threshold: f32,
 
     updated: bool,
+    mouse_delta: Vec2,
     touch_positions: HashMap<u64, Vec2>,
 }
 
 fn _get_camera_relative_position(longitude: f32, latitude: f32, radius: f32) -> Vec3 {
-    vec3(
-        radius * latitude.cos() * longitude.sin(),
-        radius * latitude.sin(),
-        radius * latitude.cos() * longitude.cos(),
-    )
+    vec3(radius * latitude.cos() * longitude.sin(), radius * latitude.sin(), radius * latitude.cos() * longitude.cos())
 }
 
 impl Default for CameraWControls {
@@ -59,6 +56,7 @@ impl Default for CameraWControls {
             zoom_touch_sensitivity: config.zoom_touch_sensitivity,
             touch_zoom_threshold: config.touch_zoom_threshold,
             updated: false,
+            mouse_delta: Vec2::ZERO,
             touch_positions: HashMap::default(),
         }
     }
@@ -120,13 +118,10 @@ impl CameraWControls {
         } else if touches.len() > 1 {
             let curr_dist = touches[0].position.distance(touches[1].position);
 
-            let deltas = (
-                self._process_touch_and_get_delta(&touches[0]),
-                self._process_touch_and_get_delta(&touches[1]),
-            );
+            let deltas =
+                (self._process_touch_and_get_delta(&touches[0]), self._process_touch_and_get_delta(&touches[1]));
 
-            let prev_dist =
-                (touches[0].position - deltas.0).distance(touches[1].position - deltas.1);
+            let prev_dist = (touches[0].position - deltas.0).distance(touches[1].position - deltas.1);
 
             let dist_delta = curr_dist - prev_dist;
             if dist_delta.abs() < self.touch_zoom_threshold {
@@ -136,6 +131,22 @@ impl CameraWControls {
             }
         }
         None
+    }
+
+    fn _get_corrected_mouse_delta(&self) -> Vec2 {
+        // `set_cursor_grab` is used so that the cursor cannot leave the iframe in the browser.
+        // This is needed, because macroquad will not recognize events, like mouse release, outside
+        // of the window, causing rotation / pan to still be active if the button is released outside
+        // of the window.
+        //
+        // Howerver, using `set_cursor_grab` causes the mouse to reposition in the first frame with mouse movement,
+        // after the grab is set, which causes a huge `mouse_delta_position()` leading to sudden jump.
+        // To avoid this, the delta of the first frame after a frame without movement is clamped.
+        if self.mouse_delta == vec2(0.0, 0.0) {
+            mouse_delta_position().clamp(-0.01 * Vec2::ONE, 0.01 * Vec2::ONE)
+        } else {
+            mouse_delta_position()
+        }
     }
 
     pub fn update(&mut self, force_update: bool) {
@@ -148,16 +159,17 @@ impl CameraWControls {
         if touches.is_empty() {
             if is_mouse_button_down(MouseButton::Left) {
                 set_cursor_grab(true);
-                self._rotate(mouse_delta_position(), self.rotate_mouse_sensitivity);
+                self.mouse_delta = self._get_corrected_mouse_delta();
+                self._rotate(self.mouse_delta, self.rotate_mouse_sensitivity);
             } else if is_mouse_button_down(MouseButton::Right) {
                 set_cursor_grab(true);
-                target = self._pan(mouse_delta_position(), self.pan_mouse_sensitivity);
+                self.mouse_delta = self._get_corrected_mouse_delta();
+                target = self._pan(self.mouse_delta, self.pan_mouse_sensitivity);
             } else {
                 set_cursor_grab(false);
                 self._zoom(mouse_wheel().1, self.zoom_mouse_sensitivity);
             }
         } else {
-            println!("touches: {:?}", &touches);
             match self._process_touches(&touches) {
                 Some(TouchAction::Rotate(delta)) => {
                     self._rotate(delta, self.rotate_touch_sensitivity);
@@ -173,13 +185,14 @@ impl CameraWControls {
         }
 
         if self.updated {
-            let position =
-                target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
+            let position = target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
 
             self.camera = Camera3D {
                 position: position,
                 target: target,
                 up: vec3(0., 1., 0.),
+                z_near: self.camera.z_near,
+                z_far: self.camera.z_far,
                 ..Default::default()
             };
             set_camera(&self.camera);
