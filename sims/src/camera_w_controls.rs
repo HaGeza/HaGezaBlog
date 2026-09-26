@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::config::load_camera_config;
+use crate::config::camera::load_camera_config;
 use macroquad::prelude::*;
 
 pub struct CameraWControls {

@@ -2,6 +2,15 @@
 default:
     @just --list
 
+prepare_shaders glsl_version glsl_version_str:
+    rm -rf "src/shaders/versions/{{glsl_version}}"
+    mkdir -p "src/shaders/versions/{{glsl_version}}"
+    for file in $(find src/shaders -type f ! -path 'src/shaders/versions/*'); do \
+        dest="src/shaders/versions/{{glsl_version}}/`basename $file`"; \
+        mkdir -p "`dirname $dest`"; \
+        sed "s/^#version.*/#version {{glsl_version_str}}/" "$file" > "$dest"; \
+    done
+
 # Build one or all WASM simulations
 #   just wasm                  <- builds all binaries in the workspace
 #   just wasm electro_magnetic <- builds only that binary
@@ -10,6 +19,9 @@ wasm sim="":
     set -e
     
     mkdir -p ../app/static/wasm
+
+    export GLSL_VERSION=v300es
+    just prepare_shaders v300es "300 es"
 
     if [ -z "{{sim}}" ]; then
         echo "Building all binaries..."
@@ -26,6 +38,8 @@ wasm sim="":
     #
 # Build and run a simulation locally
 run_sim sim="":
+    export GLSL_VERSION=v330
+    just prepare_shaders v330 "330"
     cargo build --release --bin {{sim}}
     ./target/release/{{sim}}
 
