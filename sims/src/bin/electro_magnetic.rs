@@ -1,8 +1,8 @@
 use macroquad::conf::Conf;
 use macroquad::prelude::*;
 use sims::config::macroquad::get_macroquad_conf;
-use sims::load_shader_material;
 use sims::mesh::common::draw_mesh_with_material;
+use sims::mesh::material::{FragShader, VertShader, load_shader_material};
 use sims::{camera_w_controls::CameraWControls, mesh::models::light_bulb::get_light_bulb_mesh};
 
 fn window_conf() -> Conf {
@@ -12,8 +12,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let lightbulb = get_light_bulb_mesh();
-    let lightbulb_material = load_shader_material!("general", "directional_light").unwrap();
-    lightbulb_material.set_uniform("light_direction", vec3(1., 0., 0.));
+    let lightbulb_material =
+        load_shader_material(VertShader::General, FragShader::DirectionalLight(vec3(1., 0., 0.))).unwrap();
 
     let mut camera = CameraWControls::default();
     camera.update(true);

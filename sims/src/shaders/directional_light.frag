@@ -9,6 +9,6 @@ uniform vec3 light_direction;
 out vec4 final_color;
 
 void main() {
-    float diffuse = max(dot(normalize(normal3), normalize(light_direction)), 0.001);
-    final_color = color * diffuse;
+    float diffuse = max(dot(normalize(normal3), normalize(light_direction)), 0.1);
+    final_color = color / 255.0 * diffuse;
 }
