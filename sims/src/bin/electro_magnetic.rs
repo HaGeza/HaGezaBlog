@@ -12,7 +12,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let lightbulb = get_light_bulb_mesh();
-    let lightbulb_material = load_shader_material!("lightbulb").unwrap();
+    let lightbulb_material = load_shader_material!("general", "directional_light").unwrap();
+    lightbulb_material.set_uniform("light_direction", vec3(0., 1., 0.));
 
     let mut camera = CameraWControls::default();
     camera.update(true);

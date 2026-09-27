@@ -1,27 +1,33 @@
 //! Module for creating Lathe Meshes, see: https://en.wikipedia.org/wiki/Lathe_(graphics) for example
 
+use crate::shape::common::get_profile_normals;
+
 use super::common::is_non_empty_triangle;
 use std::f32::consts::PI;
 
 use macroquad::{
-    color::WHITE,
-    math::{Vec2, Vec3, Vec4},
+    color::Color,
+    math::{Vec2, Vec3, Vec4, Vec4Swizzles, vec3},
     models::Mesh,
     ui::Vertex,
 };
 
 /** Return the vertices of the lathe mesh created  */
-fn create_lathe_vertices(profile: &[Vec2], num_rings: usize) -> Vec<Vertex> {
+fn create_lathe_vertices(profile: &[Vec2], num_rings: usize, color: &Color) -> Vec<Vertex> {
     let mut vertices = vec![];
+    let profile_normals = get_profile_normals(&profile);
+
     for ring in 0..num_rings {
-        for pt in profile {
+        for (pt, normal) in profile.iter().zip(profile_normals.iter()) {
             let theta: f32 = ring as f32 / num_rings as f32 * 2. * PI;
             let position = Vec3::new(pt.x * theta.cos(), pt.y, pt.x * theta.sin());
+            let normal = Vec4::new(normal.x * theta.cos(), normal.y, normal.x * theta.sin(), 0.);
+            println!("{}", normal.xyz().normalize().dot(vec3(0., 1., 0.).normalize()));
             vertices.push(Vertex {
                 position: position,
                 uv: Vec2::ZERO,
-                color: WHITE.into(), // TODO
-                normal: Vec4::ZERO,  // TODO
+                color: (*color).into(),
+                normal: normal,
             });
         }
     }
@@ -63,8 +69,8 @@ fn create_lathe_indices(profile: &[Vec2], num_rings: usize, vertices: &Vec<Verte
  * Create a mesh by rotating a 2D `profile` around the Y axis `num_rings` times.
  * The `profile` points are assumed to be clockwise ordered.
  */
-pub fn create_lathe_mesh(profile: &[Vec2], num_rings: usize) -> Mesh {
-    let vertices = create_lathe_vertices(profile, num_rings);
+pub fn create_lathe_mesh(profile: &[Vec2], num_rings: usize, color: &Color) -> Mesh {
+    let vertices = create_lathe_vertices(profile, num_rings, color);
     let indices = create_lathe_indices(profile, num_rings, &vertices);
     Mesh {
         vertices: vertices,
@@ -75,6 +81,7 @@ pub fn create_lathe_mesh(profile: &[Vec2], num_rings: usize) -> Mesh {
 
 #[cfg(test)]
 mod tests {
+    use macroquad::color;
     use macroquad::math::{vec2, vec3};
 
     use crate::assert_vec3_relative_eq;
@@ -85,17 +92,17 @@ mod tests {
     fn test_create_lathe_vertices_creates_correct_number_of_vertices() {
         let profile = vec![vec2(1., 0.5), vec2(0., 1.), vec2(-1., 0.5)];
 
-        assert_eq!(create_lathe_vertices(&profile, 2).len(), 6);
-        assert_eq!(create_lathe_vertices(&profile, 3).len(), 9);
-        assert_eq!(create_lathe_vertices(&profile, 4).len(), 12);
-        assert_eq!(create_lathe_vertices(&profile, 20).len(), 60);
+        assert_eq!(create_lathe_vertices(&profile, 2, &color::WHITE).len(), 6);
+        assert_eq!(create_lathe_vertices(&profile, 3, &color::WHITE).len(), 9);
+        assert_eq!(create_lathe_vertices(&profile, 4, &color::WHITE).len(), 12);
+        assert_eq!(create_lathe_vertices(&profile, 20, &color::WHITE).len(), 60);
     }
 
     #[test]
     fn test_create_lathe_vertices_creates_vertices_in_correct_positions() {
         let profile = vec![vec2(0.5, 1.), vec2(1., 0.), vec2(0.5, -1.)];
 
-        let vertices = create_lathe_vertices(&profile, 4);
+        let vertices = create_lathe_vertices(&profile, 4, &color::WHITE);
         // ring 0
         assert_vec3_relative_eq!(vertices[0].position, vec3(0.5, 1., 0.));
         assert_vec3_relative_eq!(vertices[1].position, vec3(1., 0., 0.));
@@ -117,7 +124,7 @@ mod tests {
     #[test]
     fn test_create_lathe_vertices_creates_no_vertices_with_zero_rings() {
         let profile = vec![vec2(0.5, 1.), vec2(0., 1.), vec2(0.5, -1.)];
-        assert_eq!(create_lathe_vertices(&profile, 0).len(), 0);
+        assert_eq!(create_lathe_vertices(&profile, 0, &color::WHITE).len(), 0);
     }
 
     #[test]
@@ -137,7 +144,7 @@ mod tests {
         .map(|p| Vertex {
             position: *p,
             uv: Vec2::ZERO,
-            color: WHITE.into(),
+            color: color::WHITE.into(),
             normal: Vec4::ZERO,
         })
         .collect();
@@ -181,7 +188,7 @@ mod tests {
         .map(|p| Vertex {
             position: *p,
             uv: Vec2::ZERO,
-            color: WHITE.into(),
+            color: color::WHITE.into(),
             normal: Vec4::ZERO,
         })
         .collect();
@@ -208,7 +215,7 @@ mod tests {
     #[test]
     fn test_create_lathe_mesh_creates_simple_mesh() {
         let profile = vec![vec2(1., 1.), vec2(1., -1.)];
-        let mesh = create_lathe_mesh(&profile, 2);
+        let mesh = create_lathe_mesh(&profile, 2, &color::WHITE);
 
         assert_eq!(mesh.vertices.len(), 4);
         assert_vec3_relative_eq!(mesh.vertices[0].position, vec3(1., 1., 0.));

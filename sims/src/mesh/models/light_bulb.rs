@@ -1,6 +1,7 @@
 use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
 use macroquad::{
+    color,
     math::{Vec2, vec2},
     models::Mesh,
 };
@@ -85,7 +86,7 @@ fn create_light_bulb_top_profile(params: LightBulbTopProfileParams) -> Result<Ve
 
     let neck_a = vec2(neck_b.x, neck_b.y - neck_c.distance(neck_b));
 
-    let neck: Vec<Vec2> = get_quadratic_bezier(&neck_a, &neck_b, &neck_c, params.neck_num_sections);
+    let neck: Vec<Vec2> = get_quadratic_bezier([&neck_a, &neck_b, &neck_c], params.neck_num_sections);
 
     Ok([neck, head_semicircle[1..].to_vec()].concat())
 }
@@ -122,7 +123,7 @@ fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulb
     };
     let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params);
 
-    Ok(create_lathe_mesh(&[bottom_profile, top_profile].concat(), params.num_rings))
+    Ok(create_lathe_mesh(&[bottom_profile, top_profile].concat(), params.num_rings, &color::WHITE))
 }
 
 const HEAD_SEMICIRCLE_DEFAULT_RADIUS: f32 = 2.;

@@ -1,12 +1,15 @@
 #[macro_export]
 macro_rules! load_shader_material {
-    ($name:literal) => {
+    ($vert:literal, $frag:literal) => {
         load_material(
             miniquad::ShaderSource::Glsl {
-                vertex: include_str!(concat!("../shaders/versions/", env!("GLSL_VERSION"), "/", $name, ".vert")),
-                fragment: include_str!(concat!("../shaders/versions/", env!("GLSL_VERSION"), "/", $name, ".frag")),
+                vertex: include_str!(concat!("../shaders/versions/", env!("GLSL_VERSION"), "/", $vert, ".vert")),
+                fragment: include_str!(concat!("../shaders/versions/", env!("GLSL_VERSION"), "/", $frag, ".frag")),
             },
-            MaterialParams::default(),
+            MaterialParams {
+                uniforms: vec![UniformDesc::new("light_direction", UniformType::Float3)],
+                ..MaterialParams::default()
+            },
         )
     };
 }

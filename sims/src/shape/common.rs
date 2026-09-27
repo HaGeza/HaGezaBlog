@@ -1,6 +1,6 @@
 use std::{
     f32::{EPSILON, consts::PI},
-    ops::Mul,
+    ops::{Add, Div, Mul, Sub},
 };
 
 use macroquad::math::{Vec2, vec2};
@@ -36,11 +36,31 @@ pub fn intersect(line_a: [&Vec2; 2], line_b: [&Vec2; 2]) -> Option<Vec2> {
     Some(vec2(det_2d([&line_dets, &x_diffs]) / det_ab_transpose, det_2d([&line_dets, &y_diffs]) / det_ab_transpose))
 }
 
-pub fn get_quadratic_bezier(pt_0: &Vec2, pt_1: &Vec2, pt_2: &Vec2, num_sections: usize) -> Vec<Vec2> {
+pub fn get_quadratic_bezier(pts: [&Vec2; 3], num_sections: usize) -> Vec<Vec2> {
     return (0..=num_sections)
         .map(|i| i as f32 / num_sections as f32)
-        .map(|t| (1. - t) * ((1. - t) * *pt_0 + t * *pt_1) + t * ((1. - t) * *pt_1 + t * *pt_2))
+        .map(|t| (1. - t) * ((1. - t) * *pts[0] + t * *pts[1]) + t * ((1. - t) * *pts[1] + t * *pts[2]))
         .collect();
+}
+
+fn _get_normal(pts: [&Vec2; 2]) -> Vec2 {
+    let tangent = pts[1].sub(*pts[0]);
+    vec2(tangent.y, -tangent.x)
+}
+
+pub fn get_profile_normals(profile: &[Vec2]) -> Vec<Vec2> {
+    let num_pts = profile.len();
+    let mut normals = vec![Vec2::ZERO; num_pts];
+
+    normals[0] = _get_normal([&profile[0], &profile[1]]);
+    for pt_ind in 1..num_pts - 1 {
+        normals[pt_ind] = _get_normal([&profile[pt_ind - 1], &profile[pt_ind]])
+            .add(_get_normal([&profile[pt_ind], &profile[pt_ind + 1]]))
+            .div(2.);
+    }
+    normals[num_pts - 1] = _get_normal([&profile[num_pts - 2], &profile[num_pts - 1]]);
+
+    normals
 }
 
 #[cfg(test)]
