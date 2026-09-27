@@ -33,7 +33,6 @@ struct LightBulbTopProfileParams {
     head_num_sections: usize,
     head_semicircle_radians: f32,
     head_semicircle_radius: f32,
-    bottom_half_width: f32,
     neck_num_sections: usize,
 }
 
@@ -49,7 +48,10 @@ enum LightBulbTopProfileError {
     NoIntersection,
 }
 
-fn create_light_bulb_top_profile(params: LightBulbTopProfileParams) -> Result<Vec<Vec2>, LightBulbTopProfileError> {
+fn create_light_bulb_top_profile(
+    params: LightBulbTopProfileParams,
+    bottom_profile: &[Vec2],
+) -> Result<Vec<Vec2>, LightBulbTopProfileError> {
     if params.head_num_sections < 2 {
         return Err(LightBulbTopProfileError::TooFewSections);
     }
@@ -77,14 +79,17 @@ fn create_light_bulb_top_profile(params: LightBulbTopProfileParams) -> Result<Ve
         return Err(LightBulbTopProfileError::TooFewSections);
     }
 
-    let neck_c = head_semicircle[1];
-    let head_end_section = [&neck_c, &head_semicircle[0]];
-    let bottom_section = [&vec2(params.bottom_half_width, 0.), &vec2(params.bottom_half_width, 1.)];
+    let neck_a = bottom_profile[bottom_profile.len() - 1];
+    let neck_c = head_semicircle[0];
+
+    let head_end_section = [&head_semicircle[1], &neck_c];
+    let bottom_section = [
+        &bottom_profile[bottom_profile.len() - 2],
+        &bottom_profile[bottom_profile.len() - 1],
+    ];
     let Some(neck_b) = intersect(head_end_section, bottom_section) else {
         return Err(LightBulbTopProfileError::NoIntersection);
     };
-
-    let neck_a = vec2(neck_b.x, neck_b.y - neck_c.distance(neck_b));
 
     let neck: Vec<Vec2> = get_quadratic_bezier([&neck_a, &neck_b, &neck_c], params.neck_num_sections);
 
@@ -117,19 +122,18 @@ enum LightBulbMeshError {
 }
 
 fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulbMeshError> {
-    let top_profile = match create_light_bulb_top_profile(params.top_profile_params) {
+    let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params);
+    let top_profile = match create_light_bulb_top_profile(params.top_profile_params, &bottom_profile) {
         Ok(top_profile) => top_profile,
         Err(top_profile_error) => return Err(LightBulbMeshError::TopError(top_profile_error)),
     };
-    let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params);
-
-    Ok(create_lathe_mesh(&[bottom_profile, top_profile].concat(), params.num_rings, &color::WHITE))
+    Ok(create_lathe_mesh(&[bottom_profile, top_profile[1..].to_vec()].concat(), params.num_rings, &color::WHITE))
 }
 
 const HEAD_SEMICIRCLE_DEFAULT_RADIUS: f32 = 2.;
 const BOTTOM_DEFAULT_HALF_WIDTH: f32 = HEAD_SEMICIRCLE_DEFAULT_RADIUS / 2.5;
-const BOTTOM_DEFAULT_HEIGHT: f32 = BOTTOM_DEFAULT_HALF_WIDTH * 1.5;
-const BOTTOM_DEFAULT_START_Y: f32 = -HEAD_SEMICIRCLE_DEFAULT_RADIUS - BOTTOM_DEFAULT_HEIGHT;
+const BOTTOM_DEFAULT_HEIGHT: f32 = BOTTOM_DEFAULT_HALF_WIDTH;
+const BOTTOM_DEFAULT_START_Y: f32 = -HEAD_SEMICIRCLE_DEFAULT_RADIUS * 1.25 - BOTTOM_DEFAULT_HEIGHT;
 
 const HEAD_DEFAULT_NUM_SECTIONS: usize = 20;
 const HEAD_SEMICIRCLE_DEFAULT_RADIANS: f32 = 3. * FRAC_PI_4;
@@ -142,7 +146,6 @@ pub fn get_light_bulb_mesh() -> Mesh {
             head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
             head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,
             head_semicircle_radius: HEAD_SEMICIRCLE_DEFAULT_RADIUS,
-            bottom_half_width: BOTTOM_DEFAULT_HALF_WIDTH,
             neck_num_sections: NECK_DEFAULT_NUM_SECTIONS,
         },
         bottom_profile_params: LightBulbBottomProfileParams {

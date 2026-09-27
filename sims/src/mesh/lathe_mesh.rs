@@ -7,7 +7,7 @@ use std::f32::consts::PI;
 
 use macroquad::{
     color::Color,
-    math::{Vec2, Vec3, Vec4, Vec4Swizzles, vec3},
+    math::{Vec2, Vec3, Vec4},
     models::Mesh,
     ui::Vertex,
 };
@@ -22,7 +22,6 @@ fn create_lathe_vertices(profile: &[Vec2], num_rings: usize, color: &Color) -> V
             let theta: f32 = ring as f32 / num_rings as f32 * 2. * PI;
             let position = Vec3::new(pt.x * theta.cos(), pt.y, pt.x * theta.sin());
             let normal = Vec4::new(normal.x * theta.cos(), normal.y, normal.x * theta.sin(), 0.);
-            println!("{}", normal.xyz().normalize().dot(vec3(0., 1., 0.).normalize()));
             vertices.push(Vertex {
                 position: position,
                 uv: Vec2::ZERO,
@@ -38,12 +37,12 @@ fn create_lathe_indices(profile: &[Vec2], num_rings: usize, vertices: &Vec<Verte
     let mut indices = vec![];
     for ring in 0..num_rings {
         for pt_ind in 0..profile.len() - 1 {
-            let top_right = ring * profile.len() + pt_ind;
-            let bot_right = ring * profile.len() + pt_ind + 1;
+            let bot_left = ring * profile.len() + pt_ind;
+            let top_left = ring * profile.len() + pt_ind + 1;
 
             let next_ring = (ring + 1) % num_rings;
-            let top_left = next_ring * profile.len() + pt_ind;
-            let bot_left = next_ring * profile.len() + pt_ind + 1;
+            let bot_right = next_ring * profile.len() + pt_ind;
+            let top_right = next_ring * profile.len() + pt_ind + 1;
 
             // Add non-empty new faces in counterclockwise vertex order:
             if is_non_empty_triangle(

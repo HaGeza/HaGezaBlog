@@ -8,6 +8,11 @@ macro_rules! load_shader_material {
             },
             MaterialParams {
                 uniforms: vec![UniformDesc::new("light_direction", UniformType::Float3)],
+                pipeline_params: PipelineParams {
+                    depth_test: Comparison::LessOrEqual,
+                    depth_write: true,
+                    ..Default::default()
+                },
                 ..MaterialParams::default()
             },
         )

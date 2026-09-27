@@ -45,7 +45,7 @@ pub fn get_quadratic_bezier(pts: [&Vec2; 3], num_sections: usize) -> Vec<Vec2> {
 
 fn _get_normal(pts: [&Vec2; 2]) -> Vec2 {
     let tangent = pts[1].sub(*pts[0]);
-    vec2(tangent.y, -tangent.x)
+    vec2(tangent.y, -tangent.x).normalize()
 }
 
 pub fn get_profile_normals(profile: &[Vec2]) -> Vec<Vec2> {
