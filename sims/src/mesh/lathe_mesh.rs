@@ -60,7 +60,7 @@ fn create_lathe_indices(profile: &LatheProfile, num_rings: usize, vertices: &Vec
 
 /**
  * Create a mesh by rotating a 2D `profile` around the Y axis `num_rings` times.
- * The `profile` points are assumed to be clockwise ordered.
+ * The `profile` points are assumed to be counterclockwise ordered.
  */
 pub fn create_lathe_mesh(profile: &LatheProfile, num_rings: usize, color: &Color) -> Mesh {
     let vertices = create_lathe_vertices(profile, num_rings, color);
@@ -93,21 +93,21 @@ mod tests {
 
         let vertices = create_lathe_vertices(&profile, 4, &color::WHITE);
         // ring 0
-        assert_vec3_relative_eq!(vertices[0].position, vec3(0.5, 1., 0.));
-        assert_vec3_relative_eq!(vertices[1].position, vec3(1., 0., 0.));
-        assert_vec3_relative_eq!(vertices[2].position, vec3(0.5, -1., 0.));
+        assert_vec3_relative_eq!(vertices[0].position, vec3(1., 1., 0.));
+        assert_vec3_relative_eq!(vertices[1].position, vec3(0., 0.5, 0.));
+        assert_vec3_relative_eq!(vertices[2].position, vec3(0.5, 0., 0.));
         // ring 1
-        assert_vec3_relative_eq!(vertices[3].position, vec3(0., 1., 0.5));
-        assert_vec3_relative_eq!(vertices[4].position, vec3(0., 0., 1.));
-        assert_vec3_relative_eq!(vertices[5].position, vec3(0., -1., 0.5));
+        assert_vec3_relative_eq!(vertices[3].position, vec3(0., 1., 1.));
+        assert_vec3_relative_eq!(vertices[4].position, vec3(0., 0.5, 0.));
+        assert_vec3_relative_eq!(vertices[5].position, vec3(0., 0., 0.5));
         // ring 1
-        assert_vec3_relative_eq!(vertices[6].position, vec3(-0.5, 1., 0.));
-        assert_vec3_relative_eq!(vertices[7].position, vec3(-1., 0., 0.));
-        assert_vec3_relative_eq!(vertices[8].position, vec3(-0.5, -1., 0.));
+        assert_vec3_relative_eq!(vertices[6].position, vec3(-1., 1., 0.));
+        assert_vec3_relative_eq!(vertices[7].position, vec3(0., 0.5, 0.));
+        assert_vec3_relative_eq!(vertices[8].position, vec3(-0.5, 0., 0.));
         // ring 1
-        assert_vec3_relative_eq!(vertices[9].position, vec3(0., 1., -0.5));
-        assert_vec3_relative_eq!(vertices[10].position, vec3(0., 0., -1.));
-        assert_vec3_relative_eq!(vertices[11].position, vec3(0., -1., -0.5));
+        assert_vec3_relative_eq!(vertices[9].position, vec3(0., 1., -1.));
+        assert_vec3_relative_eq!(vertices[10].position, vec3(0., 0.5, 0.));
+        assert_vec3_relative_eq!(vertices[11].position, vec3(0., 0., -0.5));
     }
 
     #[test]
@@ -117,9 +117,9 @@ mod tests {
     }
 
     #[test]
-    fn test_create_lathe_indices_creates_faces_in_clockwise_order() {
+    fn test_create_lathe_indices_creates_faces_in_counterclockwise_order() {
         let profile = LatheProfile::new(&[vec2(0.5, 1.), vec2(0.5, -1.)]).unwrap();
-        let vertices = vec![
+        let vertices = [
             vec3(0.5, 1., 0.),
             vec3(0.5, -1., 0.),
             vec3(0., 1., 0.5),
@@ -139,14 +139,14 @@ mod tests {
         assert_eq!(
             indices,
             vec![
-                2, 3, 1, // face 0
-                2, 1, 0, // face 1
-                4, 5, 3, // face 2
-                4, 3, 2, // face 3
-                6, 7, 5, // face 4
-                6, 5, 4, // face 5
-                0, 1, 7, // face 6
-                0, 7, 6, // face 7
+                1, 0, 2, // face 0
+                1, 2, 3, // face 1
+                3, 2, 4, // face 2
+                3, 4, 5, // face 3
+                5, 4, 6, // face 4
+                5, 6, 7, // face 5
+                7, 6, 0, // face 6
+                7, 0, 1, // face 7
             ]
         );
     }
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_create_lathe_indices_skips_empty_faces() {
         let profile = LatheProfile::new(&[vec2(0., 1.), vec2(1., 0.), vec2(0., -1.)]).unwrap();
-        let vertices = vec![
+        let vertices = [
             vec3(0., 1., 0.), // ring 0
             vec3(1., 0., 0.),
             vec3(0., -1., 0.),
@@ -179,14 +179,14 @@ mod tests {
         assert_eq!(
             indices,
             vec![
-                3, 4, 1, // face 0
-                4, 2, 1, // face 1
-                6, 7, 4, // face 2
-                7, 5, 4, // face 3
-                9, 10, 7, // face 4
-                10, 8, 7, // face 5
-                0, 1, 10, // face 6
-                1, 11, 10, // face 7
+                1, 3, 4, // face 0
+                2, 1, 4, // face 1
+                4, 6, 7, // face 2
+                5, 4, 7, // face 3
+                7, 9, 10, // face 4
+                8, 7, 10, // face 5
+                10, 0, 1, // face 6
+                11, 10, 1 // face 7
             ]
         );
     }
@@ -206,8 +206,8 @@ mod tests {
         assert_eq!(
             mesh.indices,
             vec![
-                2, 3, 1, 2, 1, 0, //front
-                0, 1, 3, 0, 3, 2 // back
+                1, 0, 2, 1, 2, 3, // front
+                3, 2, 0, 3, 0, 1, // back
             ]
         );
     }

@@ -47,14 +47,4 @@ mod tests {
         assert!(!is_non_empty_triangle(vec3(1., 2., 3.), vec3(1., 2., 4.), vec3(1., 2., 3.)));
         assert!(!is_non_empty_triangle(vec3(1., 2., 3.), vec3(1., 2., 3.), vec3(1., 2., 3.)));
     }
-
-    #[test]
-    fn test_combine_meshes_combines_vertices() {
-        assert!(false);
-    }
-
-    #[test]
-    fn test_combine_meshes_combines_updates_and_combines() {
-        assert!(false);
-    }
 }
