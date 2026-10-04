@@ -10,6 +10,7 @@ pub mod mesh {
     pub mod models {
         pub mod light_bulb;
         pub mod light_switch;
+        pub mod model_3d;
         pub mod wire;
     }
 }

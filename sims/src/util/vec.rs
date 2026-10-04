@@ -16,10 +16,10 @@ macro_rules! vec3_relative_eq {
 #[macro_export]
 macro_rules! assert_vec3_relative_eq {
     ($lhs:expr, $rhs:expr, epsilon = $eps:expr) => {
-        assert!(crate::vec3_relative_eq!($lhs, $rhs, epsilon = $eps));
+        assert!($crate::vec3_relative_eq!($lhs, $rhs, epsilon = $eps));
     };
 
     ($lhs:expr, $rhs:expr) => {
-        assert!(crate::vec3_relative_eq!($lhs, $rhs));
+        assert!($crate::vec3_relative_eq!($lhs, $rhs));
     };
 }

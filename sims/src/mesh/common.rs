@@ -1,5 +1,3 @@
-use macroquad::material::{Material, gl_use_default_material, gl_use_material};
-use macroquad::models::draw_mesh;
 use macroquad::{math::Vec3, models::Mesh};
 
 use crate::vec3_relative_eq;
@@ -9,12 +7,6 @@ pub(super) fn is_non_empty_triangle(positions: &[Vec3; 3]) -> bool {
     !vec3_relative_eq!(positions[0], positions[1])
         && !vec3_relative_eq!(positions[0], positions[2])
         && !vec3_relative_eq!(positions[1], positions[2])
-}
-
-pub fn draw_mesh_with_material(mesh: &Mesh, material: &Material) {
-    gl_use_material(material);
-    draw_mesh(mesh);
-    gl_use_default_material();
 }
 
 #[allow(dead_code)]

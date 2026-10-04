@@ -1,17 +1,20 @@
 use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
 use macroquad::{
-    color,
+    color::{self, Color},
     math::{Vec2, vec2},
-    models::Mesh,
+    models::{Mesh, draw_mesh},
 };
 use thiserror::Error;
 
-use crate::shape::{
-    common::{get_quadratic_bezier, get_semicircle},
-    lathe_profile::{LatheProfile, LatheProfileError},
-};
 use crate::{mesh::lathe_mesh::create_lathe_mesh, shape::common::intersect};
+use crate::{
+    mesh::models::model_3d::Model3d,
+    shape::{
+        common::{get_quadratic_bezier, get_semicircle},
+        lathe_profile::{LatheProfile, LatheProfileError},
+    },
+};
 
 //          ******          +---+------+
 //       ************           |      |
@@ -133,32 +136,46 @@ struct LightBulbMeshParams {
 }
 
 #[derive(Error, Debug)]
-enum LightBulbMeshError {
+enum LightBulbError {
     #[error("failed to create profile: {0}")]
     ProfileError(LightBulbProfileError),
 }
 
-impl From<LightBulbProfileError> for LightBulbMeshError {
-    fn from(profile_error: LightBulbProfileError) -> LightBulbMeshError {
-        LightBulbMeshError::ProfileError(profile_error)
+impl From<LightBulbProfileError> for LightBulbError {
+    fn from(profile_error: LightBulbProfileError) -> LightBulbError {
+        LightBulbError::ProfileError(profile_error)
     }
 }
 
-impl From<LatheProfileError> for LightBulbMeshError {
-    fn from(lathe_error: LatheProfileError) -> LightBulbMeshError {
-        LightBulbMeshError::ProfileError(LightBulbProfileError::IncorrectProfile(lathe_error))
+impl From<LatheProfileError> for LightBulbError {
+    fn from(lathe_error: LatheProfileError) -> LightBulbError {
+        LightBulbError::ProfileError(LightBulbProfileError::IncorrectProfile(lathe_error))
     }
 }
 
-fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulbMeshError> {
-    let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params)?;
-    let top_profile = create_light_bulb_top_profile(params.top_profile_params, &bottom_profile)?;
-    Ok(create_lathe_mesh(
-        &(LatheProfile::new(&[bottom_profile.points(), &top_profile.points()[1..]].concat())?),
-        params.num_rings,
-        &color::WHITE,
-        false,
-    ))
+pub struct LightBulb {
+    bottom: Mesh,
+    top_outer: Mesh,
+    //top_inner: Mesh,
+}
+
+impl LightBulb {
+    fn new(params: LightBulbMeshParams) -> Result<Self, LightBulbError> {
+        let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params)?;
+        let top_profile = create_light_bulb_top_profile(params.top_profile_params, &bottom_profile)?;
+
+        Ok(LightBulb {
+            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, true),
+            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.2), false),
+        })
+    }
+}
+
+impl Model3d for LightBulb {
+    fn draw(&self) {
+        draw_mesh(&self.bottom);
+        draw_mesh(&self.top_outer);
+    }
 }
 
 const HEAD_SEMICIRCLE_DEFAULT_RADIUS: f32 = 2.;
@@ -171,8 +188,8 @@ const HEAD_SEMICIRCLE_DEFAULT_RADIANS: f32 = 3. * FRAC_PI_4;
 const NECK_DEFAULT_NUM_SECTIONS: usize = HEAD_DEFAULT_NUM_SECTIONS / 5;
 const NUM_RINGS: usize = HEAD_DEFAULT_NUM_SECTIONS + NECK_DEFAULT_NUM_SECTIONS;
 
-pub fn get_light_bulb_mesh() -> Mesh {
-    create_light_bulb_mesh(LightBulbMeshParams {
+pub fn get_light_bulb() -> LightBulb {
+    LightBulb::new(LightBulbMeshParams {
         top_profile_params: LightBulbTopProfileParams {
             head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
             head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,

@@ -44,6 +44,10 @@ impl LatheProfile {
         self.points.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.points.is_empty()
+    }
+
     fn get_normals(points: &[Vec2]) -> Vec<Vec2> {
         let num_pts = points.len();
         let mut normals = vec![Vec2::ZERO; num_pts];

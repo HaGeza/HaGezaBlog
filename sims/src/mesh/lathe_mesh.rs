@@ -13,7 +13,7 @@ use macroquad::{
 };
 
 /** Return the vertices of the lathe mesh created  */
-fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color) -> Vec<Vertex> {
+fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color, reverse_faces: bool) -> Vec<Vertex> {
     let mut vertices = vec![];
 
     for ring in 0..num_rings {
@@ -21,6 +21,7 @@ fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color
             let theta: f32 = ring as f32 / num_rings as f32 * 2. * PI;
             let position = Vec3::new(pt.x * theta.cos(), pt.y, pt.x * theta.sin());
             let normal = Vec4::new(normal.x * theta.cos(), normal.y, normal.x * theta.sin(), 0.);
+            let normal = normal * if reverse_faces { -1. } else { 1. };
             vertices.push(Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal });
         }
     }
@@ -69,7 +70,7 @@ fn create_lathe_indices(
  * The `profile` points are assumed to be counterclockwise ordered.
  */
 pub fn create_lathe_mesh(profile: &LatheProfile, num_rings: usize, color: &Color, reverse_faces: bool) -> Mesh {
-    let vertices = create_lathe_vertices(profile, num_rings, color);
+    let vertices = create_lathe_vertices(profile, num_rings, color, reverse_faces);
     let indices = create_lathe_indices(profile, num_rings, &vertices, reverse_faces);
     Mesh { vertices, indices, texture: None }
 }
@@ -87,17 +88,17 @@ mod tests {
     fn test_create_lathe_vertices_creates_correct_number_of_vertices() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
-        assert_eq!(create_lathe_vertices(&profile, 2, &color::WHITE).len(), 6);
-        assert_eq!(create_lathe_vertices(&profile, 3, &color::WHITE).len(), 9);
-        assert_eq!(create_lathe_vertices(&profile, 4, &color::WHITE).len(), 12);
-        assert_eq!(create_lathe_vertices(&profile, 20, &color::WHITE).len(), 60);
+        assert_eq!(create_lathe_vertices(&profile, 2, &color::WHITE, false).len(), 6);
+        assert_eq!(create_lathe_vertices(&profile, 3, &color::WHITE, false).len(), 9);
+        assert_eq!(create_lathe_vertices(&profile, 4, &color::WHITE, false).len(), 12);
+        assert_eq!(create_lathe_vertices(&profile, 20, &color::WHITE, false).len(), 60);
     }
 
     #[test]
     fn test_create_lathe_vertices_creates_vertices_in_correct_positions() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
-        let vertices = create_lathe_vertices(&profile, 4, &color::WHITE);
+        let vertices = create_lathe_vertices(&profile, 4, &color::WHITE, false);
         // ring 0
         assert_vec3_relative_eq!(vertices[0].position, vec3(1., 1., 0.));
         assert_vec3_relative_eq!(vertices[1].position, vec3(0., 0.5, 0.));
@@ -119,7 +120,7 @@ mod tests {
     #[test]
     fn test_create_lathe_vertices_creates_no_vertices_with_zero_rings() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
-        assert_eq!(create_lathe_vertices(&profile, 0, &color::WHITE).len(), 0);
+        assert_eq!(create_lathe_vertices(&profile, 0, &color::WHITE, false).len(), 0);
     }
 
     #[test]

@@ -41,13 +41,10 @@ pub fn load_shader_material(vert: VertShader, frag: FragShader) -> Result<Materi
             load_frag_shader!("directional_light")
         },
     };
-    let shader_source = miniquad::ShaderSource::Glsl {
-        vertex: vert_shader,
-        fragment: frag_shader,
-    };
+    let shader_source = miniquad::ShaderSource::Glsl { vertex: vert_shader, fragment: frag_shader };
 
     let material_params = MaterialParams {
-        uniforms: uniforms,
+        uniforms,
         pipeline_params: PipelineParams {
             depth_test: Comparison::LessOrEqual,
             depth_write: true,

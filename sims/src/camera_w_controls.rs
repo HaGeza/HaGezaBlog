@@ -45,9 +45,9 @@ impl Default for CameraWControls {
                 z_far: config.z_far,
                 ..Camera3D::default()
             },
-            longitude: longitude,
-            latitude: latitude,
-            radius: radius,
+            longitude,
+            latitude,
+            radius,
             rotate_mouse_sensitivity: config.rotate_mouse_sensitivity,
             pan_mouse_sensitivity: config.pan_mouse_sensitivity,
             zoom_mouse_sensitivity: config.zoom_mouse_sensitivity,
@@ -112,7 +112,7 @@ impl CameraWControls {
         delta
     }
 
-    fn _process_touches(&mut self, touches: &Vec<Touch>) -> Option<TouchAction> {
+    fn _process_touches(&mut self, touches: &[Touch]) -> Option<TouchAction> {
         if touches.len() == 1 {
             return Some(TouchAction::Rotate(self._process_touch_and_get_delta(&touches[0])));
         } else if touches.len() > 1 {
@@ -188,8 +188,8 @@ impl CameraWControls {
             let position = target + _get_camera_relative_position(self.longitude, self.latitude, self.radius);
 
             self.camera = Camera3D {
-                position: position,
-                target: target,
+                position,
+                target,
                 up: vec3(0., 1., 0.),
                 z_near: self.camera.z_near,
                 z_far: self.camera.z_far,
