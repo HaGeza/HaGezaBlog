@@ -89,12 +89,12 @@ fn create_light_bulb_top_profile(
         return Err(LightBulbProfileError::TooFewSections);
     }
 
-    let neck_a = bottom_profile.point(bottom_profile.len() - 1);
+    let neck_a = bottom_profile.point(bottom_profile.len() - 2);
     let neck_c = head_semicircle[0];
 
     let head_end_section = [&head_semicircle[1], &neck_c];
     let bottom_section =
-        [bottom_profile.point(bottom_profile.len() - 2), bottom_profile.point(bottom_profile.len() - 1)];
+        [bottom_profile.point(bottom_profile.len() - 3), bottom_profile.point(bottom_profile.len() - 2)];
     let Some(neck_b) = intersect(head_end_section, bottom_section) else {
         return Err(LightBulbProfileError::NoIntersection);
     };
@@ -126,6 +126,7 @@ fn create_light_bulb_bottom_profile(
         vec2(0., params.start_y),
         vec2(params.half_width, params.start_y),
         vec2(params.half_width, params.start_y + params.height),
+        vec2(0., params.start_y + params.height),
     ])?)
 }
 
@@ -166,7 +167,7 @@ impl LightBulb {
 
         Ok(LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, true),
-            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.2), false),
+            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), true),
         })
     }
 }

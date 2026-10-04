@@ -10,5 +10,5 @@ out vec4 final_color;
 
 void main() {
     float diffuse = max(dot(normalize(normal3), normalize(light_direction)), 0.1);
-    final_color = color / 255.0 * diffuse;
+    final_color = vec4(color.xyz * diffuse, color.w) / 255.0;
 }

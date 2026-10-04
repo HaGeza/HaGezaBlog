@@ -1,7 +1,9 @@
 use macroquad::Error;
 use macroquad::material::{Material, MaterialParams, load_material};
 use macroquad::math::Vec3;
-use miniquad::{Comparison, PipelineParams, UniformDesc, UniformType};
+use miniquad::{
+    BlendFactor, BlendState, BlendValue, Comparison, CullFace, Equation, PipelineParams, UniformDesc, UniformType,
+};
 
 macro_rules! load_shader {
     ($file:literal, $type:literal) => {
@@ -47,7 +49,13 @@ pub fn load_shader_material(vert: VertShader, frag: FragShader) -> Result<Materi
         uniforms,
         pipeline_params: PipelineParams {
             depth_test: Comparison::LessOrEqual,
-            depth_write: true,
+            depth_write: false,
+            cull_face: CullFace::Back,
+            color_blend: Some(BlendState::new(
+                Equation::Add,
+                BlendFactor::Value(BlendValue::SourceAlpha),
+                BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
+            )),
             ..Default::default()
         },
         ..MaterialParams::default()
