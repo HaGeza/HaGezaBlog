@@ -1,6 +1,6 @@
 //! Module for creating Lathe Meshes, see: https://en.wikipedia.org/wiki/Lathe_(graphics) for example
 
-use crate::shape::common::get_profile_normals;
+use crate::shape::lathe_profile::LatheProfile;
 
 use super::common::is_non_empty_triangle;
 use std::f32::consts::PI;
@@ -13,27 +13,21 @@ use macroquad::{
 };
 
 /** Return the vertices of the lathe mesh created  */
-fn create_lathe_vertices(profile: &[Vec2], num_rings: usize, color: &Color) -> Vec<Vertex> {
+fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color) -> Vec<Vertex> {
     let mut vertices = vec![];
-    let profile_normals = get_profile_normals(&profile);
 
     for ring in 0..num_rings {
-        for (pt, normal) in profile.iter().zip(profile_normals.iter()) {
+        for (pt, normal) in profile.points().iter().zip(profile.normals().iter()) {
             let theta: f32 = ring as f32 / num_rings as f32 * 2. * PI;
             let position = Vec3::new(pt.x * theta.cos(), pt.y, pt.x * theta.sin());
             let normal = Vec4::new(normal.x * theta.cos(), normal.y, normal.x * theta.sin(), 0.);
-            vertices.push(Vertex {
-                position: position,
-                uv: Vec2::ZERO,
-                color: (*color).into(),
-                normal: normal,
-            });
+            vertices.push(Vertex { position: position, uv: Vec2::ZERO, color: (*color).into(), normal: normal });
         }
     }
     vertices
 }
 
-fn create_lathe_indices(profile: &[Vec2], num_rings: usize, vertices: &Vec<Vertex>) -> Vec<u16> {
+fn create_lathe_indices(profile: &LatheProfile, num_rings: usize, vertices: &Vec<Vertex>) -> Vec<u16> {
     let mut indices = vec![];
     for ring in 0..num_rings {
         for pt_ind in 0..profile.len() - 1 {
@@ -68,14 +62,10 @@ fn create_lathe_indices(profile: &[Vec2], num_rings: usize, vertices: &Vec<Verte
  * Create a mesh by rotating a 2D `profile` around the Y axis `num_rings` times.
  * The `profile` points are assumed to be clockwise ordered.
  */
-pub fn create_lathe_mesh(profile: &[Vec2], num_rings: usize, color: &Color) -> Mesh {
+pub fn create_lathe_mesh(profile: &LatheProfile, num_rings: usize, color: &Color) -> Mesh {
     let vertices = create_lathe_vertices(profile, num_rings, color);
     let indices = create_lathe_indices(profile, num_rings, &vertices);
-    Mesh {
-        vertices: vertices,
-        indices: indices,
-        texture: None,
-    }
+    Mesh { vertices: vertices, indices: indices, texture: None }
 }
 
 #[cfg(test)]
@@ -89,7 +79,7 @@ mod tests {
 
     #[test]
     fn test_create_lathe_vertices_creates_correct_number_of_vertices() {
-        let profile = vec![vec2(1., 0.5), vec2(0., 1.), vec2(-1., 0.5)];
+        let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
         assert_eq!(create_lathe_vertices(&profile, 2, &color::WHITE).len(), 6);
         assert_eq!(create_lathe_vertices(&profile, 3, &color::WHITE).len(), 9);
@@ -99,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_create_lathe_vertices_creates_vertices_in_correct_positions() {
-        let profile = vec![vec2(0.5, 1.), vec2(1., 0.), vec2(0.5, -1.)];
+        let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
         let vertices = create_lathe_vertices(&profile, 4, &color::WHITE);
         // ring 0
@@ -122,13 +112,13 @@ mod tests {
 
     #[test]
     fn test_create_lathe_vertices_creates_no_vertices_with_zero_rings() {
-        let profile = vec![vec2(0.5, 1.), vec2(0., 1.), vec2(0.5, -1.)];
+        let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
         assert_eq!(create_lathe_vertices(&profile, 0, &color::WHITE).len(), 0);
     }
 
     #[test]
     fn test_create_lathe_indices_creates_faces_in_clockwise_order() {
-        let profile = vec![vec2(0.5, 1.), vec2(0.5, -1.)];
+        let profile = LatheProfile::new(&[vec2(0.5, 1.), vec2(0.5, -1.)]).unwrap();
         let vertices = vec![
             vec3(0.5, 1., 0.),
             vec3(0.5, -1., 0.),
@@ -140,12 +130,7 @@ mod tests {
             vec3(0., -1., -0.5),
         ]
         .iter()
-        .map(|p| Vertex {
-            position: *p,
-            uv: Vec2::ZERO,
-            color: color::WHITE.into(),
-            normal: Vec4::ZERO,
-        })
+        .map(|p| Vertex { position: *p, uv: Vec2::ZERO, color: color::WHITE.into(), normal: Vec4::ZERO })
         .collect();
 
         let indices = create_lathe_indices(&profile, 4, &vertices);
@@ -168,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_create_lathe_indices_skips_empty_faces() {
-        let profile = vec![vec2(0., 1.), vec2(1., 0.), vec2(0., -1.)];
+        let profile = LatheProfile::new(&[vec2(0., 1.), vec2(1., 0.), vec2(0., -1.)]).unwrap();
         let vertices = vec![
             vec3(0., 1., 0.), // ring 0
             vec3(1., 0., 0.),
@@ -184,12 +169,7 @@ mod tests {
             vec3(0., -1., 0.),
         ]
         .iter()
-        .map(|p| Vertex {
-            position: *p,
-            uv: Vec2::ZERO,
-            color: color::WHITE.into(),
-            normal: Vec4::ZERO,
-        })
+        .map(|p| Vertex { position: *p, uv: Vec2::ZERO, color: color::WHITE.into(), normal: Vec4::ZERO })
         .collect();
 
         let indices = create_lathe_indices(&profile, 4, &vertices);
@@ -213,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_create_lathe_mesh_creates_simple_mesh() {
-        let profile = vec![vec2(1., 1.), vec2(1., -1.)];
+        let profile = LatheProfile::new(&[vec2(1., 1.), vec2(1., -1.)]).unwrap();
         let mesh = create_lathe_mesh(&profile, 2, &color::WHITE);
 
         assert_eq!(mesh.vertices.len(), 4);

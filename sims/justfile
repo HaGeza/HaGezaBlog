@@ -43,6 +43,11 @@ run_sim sim="":
     cargo build --release --bin {{sim}}
     ./target/release/{{sim}}
 
+build_sim sim="":
+    export GLSL_VERSION=v330
+    just prepare_shaders v330 "330"
+    cargo build --bin {{sim}}
+
 # Clean build artifacts
 clean:
     cargo clean

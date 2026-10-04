@@ -15,6 +15,7 @@ pub mod mesh {
 }
 pub mod shape {
     pub mod common;
+    pub mod lathe_profile;
 }
 pub(crate) mod util {
     pub(crate) mod linalg;
