@@ -96,7 +96,7 @@ fn create_light_bulb_top_profile(
         return Err(LightBulbProfileError::NoIntersection);
     };
 
-    let neck: Vec<Vec2> = get_quadratic_bezier([&neck_a, &neck_b, &neck_c], params.neck_num_sections);
+    let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
 
     let points: Vec<Vec2> = neck
         .into_iter()
@@ -119,7 +119,8 @@ struct LightBulbBottomProfileParams {
 fn create_light_bulb_bottom_profile(
     params: LightBulbBottomProfileParams,
 ) -> Result<LatheProfile, LightBulbProfileError> {
-    Ok(LatheProfile::new(&vec![
+    Ok(LatheProfile::new(&[
+        vec2(0., params.start_y),
         vec2(params.half_width, params.start_y),
         vec2(params.half_width, params.start_y + params.height),
     ])?)
@@ -156,6 +157,7 @@ fn create_light_bulb_mesh(params: LightBulbMeshParams) -> Result<Mesh, LightBulb
         &(LatheProfile::new(&[bottom_profile.points(), &top_profile.points()[1..]].concat())?),
         params.num_rings,
         &color::WHITE,
+        false,
     ))
 }
 
