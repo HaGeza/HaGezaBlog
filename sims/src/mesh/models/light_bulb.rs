@@ -2,18 +2,21 @@ use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
 use macroquad::{
     color::{self, Color},
-    math::{Vec2, vec2},
+    math::{Vec2, vec2, vec3},
     models::{Mesh, draw_mesh},
 };
 use thiserror::Error;
 
-use crate::{mesh::lathe_mesh::create_lathe_mesh, shape::common::intersect};
 use crate::{
-    mesh::models::model_3d::Model3d,
+    mesh::material::FragFeature,
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
     },
+};
+use crate::{
+    mesh::{lathe_mesh::create_lathe_mesh, material::MaterialBuilder},
+    shape::common::intersect,
 };
 
 //          ******          +---+------+
@@ -62,72 +65,10 @@ impl From<LatheProfileError> for LightBulbProfileError {
     }
 }
 
-fn create_light_bulb_top_profile(
-    params: LightBulbTopProfileParams,
-    bottom_profile: &LatheProfile,
-) -> Result<LatheProfile, LightBulbProfileError> {
-    if params.head_num_sections < 2 {
-        return Err(LightBulbProfileError::TooFewSections);
-    }
-    if params.head_semicircle_radians <= FRAC_PI_2 {
-        return Err(LightBulbProfileError::TooSmallAngle);
-    }
-    if params.head_semicircle_radians >= PI {
-        return Err(LightBulbProfileError::TooLargeAngle);
-    }
-
-    let head_semicircle: Vec<Vec2> = get_semicircle(
-        params.head_semicircle_radius,
-        FRAC_PI_2 - params.head_semicircle_radians,
-        FRAC_PI_2,
-        params.head_num_sections,
-    );
-
-    if head_semicircle[0].y >= 0. || head_semicircle[1].y >= 0. {
-        // The last section of the glass bulb profile should be in the fourth quarter.
-        // If it isn't and `theta` is in the correct range, the resolution is not high enough
-        return Err(LightBulbProfileError::TooFewSections);
-    }
-
-    let neck_a = bottom_profile.point(bottom_profile.len() - 2);
-    let neck_c = head_semicircle[0];
-
-    let head_end_section = [&head_semicircle[1], &neck_c];
-    let bottom_section =
-        [bottom_profile.point(bottom_profile.len() - 3), bottom_profile.point(bottom_profile.len() - 2)];
-    let Some(neck_b) = intersect(head_end_section, bottom_section) else {
-        return Err(LightBulbProfileError::NoIntersection);
-    };
-
-    let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
-
-    let points: Vec<Vec2> = neck
-        .into_iter()
-        .chain(head_semicircle.into_iter().skip(1))
-        .map(|mut pt| {
-            pt.x = pt.x.max(0.);
-            pt
-        })
-        .collect();
-
-    Ok(LatheProfile::new(&points)?)
-}
-
 struct LightBulbBottomProfileParams {
     start_y: f32,
     half_width: f32,
     height: f32,
-}
-
-fn create_light_bulb_bottom_profile(
-    params: LightBulbBottomProfileParams,
-) -> Result<LatheProfile, LightBulbProfileError> {
-    Ok(LatheProfile::new(&[
-        vec2(0., params.start_y),
-        vec2(params.half_width, params.start_y),
-        vec2(params.half_width, params.start_y + params.height),
-        vec2(0., params.start_y + params.height),
-    ])?)
 }
 
 struct LightBulbMeshParams {
@@ -162,20 +103,77 @@ pub struct LightBulb {
 
 impl LightBulb {
     fn new(params: LightBulbMeshParams) -> Result<Self, LightBulbError> {
-        let bottom_profile = create_light_bulb_bottom_profile(params.bottom_profile_params)?;
-        let top_profile = create_light_bulb_top_profile(params.top_profile_params, &bottom_profile)?;
+        let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
+        let top_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
+
+        let builder = MaterialBuilder::new().add_frag_features(&[FragFeature::DirectionalLight(vec3(1., 0., 0.))]);
+        let bottom_material = builder.build()?;
+        let top_material = builder.build()?;
 
         Ok(LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, true),
             top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), true),
         })
     }
-}
 
-impl Model3d for LightBulb {
-    fn draw(&self) {
-        draw_mesh(&self.bottom);
-        draw_mesh(&self.top_outer);
+    fn create_bottom_profile(params: LightBulbBottomProfileParams) -> Result<LatheProfile, LightBulbProfileError> {
+        Ok(LatheProfile::new(&[
+            vec2(0., params.start_y),
+            vec2(params.half_width, params.start_y),
+            vec2(params.half_width, params.start_y + params.height),
+            vec2(0., params.start_y + params.height),
+        ])?)
+    }
+
+    fn create_top_profile(
+        params: LightBulbTopProfileParams,
+        bottom_profile: &LatheProfile,
+    ) -> Result<LatheProfile, LightBulbProfileError> {
+        if params.head_num_sections < 2 {
+            return Err(LightBulbProfileError::TooFewSections);
+        }
+        if params.head_semicircle_radians <= FRAC_PI_2 {
+            return Err(LightBulbProfileError::TooSmallAngle);
+        }
+        if params.head_semicircle_radians >= PI {
+            return Err(LightBulbProfileError::TooLargeAngle);
+        }
+
+        let head_semicircle: Vec<Vec2> = get_semicircle(
+            params.head_semicircle_radius,
+            FRAC_PI_2 - params.head_semicircle_radians,
+            FRAC_PI_2,
+            params.head_num_sections,
+        );
+
+        if head_semicircle[0].y >= 0. || head_semicircle[1].y >= 0. {
+            // The last section of the glass bulb profile should be in the fourth quarter.
+            // If it isn't and `theta` is in the correct range, the resolution is not high enough
+            return Err(LightBulbProfileError::TooFewSections);
+        }
+
+        let neck_a = bottom_profile.point(bottom_profile.len() - 2);
+        let neck_c = head_semicircle[0];
+
+        let head_end_section = [&head_semicircle[1], &neck_c];
+        let bottom_section =
+            [bottom_profile.point(bottom_profile.len() - 3), bottom_profile.point(bottom_profile.len() - 2)];
+        let Some(neck_b) = intersect(head_end_section, bottom_section) else {
+            return Err(LightBulbProfileError::NoIntersection);
+        };
+
+        let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
+
+        let points: Vec<Vec2> = neck
+            .into_iter()
+            .chain(head_semicircle.into_iter().skip(1))
+            .map(|mut pt| {
+                pt.x = pt.x.max(0.);
+                pt
+            })
+            .collect();
+
+        Ok(LatheProfile::new(&points)?)
     }
 }
 
