@@ -33,6 +33,7 @@ trait GlslOutputVar {
 enum VertOutput {
     Color,
     Normal,
+    Position,
 }
 
 impl GlslOutputVar for VertOutput {
@@ -40,6 +41,7 @@ impl GlslOutputVar for VertOutput {
         match self {
             Self::Color => "vec4 color",
             Self::Normal => "vec3 normal3",
+            Self::Position => "vec3 position3",
         }
         .to_string()
     }
@@ -50,6 +52,7 @@ impl VertOutput {
         match self {
             Self::Color => "color = color0;",
             Self::Normal => "normal3 = normalize(transpose(inverse(mat3(Model))) * normal.xyz);",
+            Self::Position => "position3 = (Model * vec4(position, 1.0)).xyz;",
         }
         .to_string()
     }
@@ -88,8 +91,9 @@ impl FragOutput {
 }
 
 pub enum FragFeature {
-    DirectionalLight(Vec3),
     AmbientLight(f32),
+    DirectionalLight(Vec3),
+    PointLight(Vec3),
 }
 
 enum UniformWithValue {
@@ -171,6 +175,14 @@ impl MaterialBuilder {
 
     fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
         match frag_feature {
+            FragFeature::AmbientLight(ambient_intensity) => {
+                self.vert_outputs.insert(VertOutput::Color);
+                self.frag_outputs.insert(FragOutput::FinalColor);
+
+                let uniform_name = self.get_next_uniform_name("ambient_intensity");
+                self.frag_feature_uses.push(format!("{LIGHTING_VAR} += {uniform_name};"));
+                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float(*ambient_intensity));
+            },
             FragFeature::DirectionalLight(light_direction) => {
                 self.vert_outputs.extend([VertOutput::Color, VertOutput::Normal]);
                 self.frag_outputs.insert(FragOutput::FinalColor);
@@ -180,13 +192,15 @@ impl MaterialBuilder {
                     .push(format!("{LIGHTING_VAR} += max(dot(normalize(normal3), normalize({uniform_name})), 0.0);"));
                 self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_direction));
             },
-            FragFeature::AmbientLight(ambient_intensity) => {
-                self.vert_outputs.insert(VertOutput::Color);
+            FragFeature::PointLight(light_position) => {
+                self.vert_outputs.extend([VertOutput::Color, VertOutput::Normal, VertOutput::Position]);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 
-                let uniform_name = self.get_next_uniform_name("ambient_intensity");
-                self.frag_feature_uses.push(format!("{LIGHTING_VAR} += {uniform_name};"));
-                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float(*ambient_intensity));
+                let uniform_name = self.get_next_uniform_name("light_position");
+                self.frag_feature_uses.push(format!(
+                    "{LIGHTING_VAR} += max(dot(normalize(normal3), normalize({uniform_name} - position3)), 0.0);"
+                ));
+                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_position));
             },
         };
         Ok(())

@@ -94,9 +94,14 @@ impl LightBulb {
         let top_outer_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
 
+        let point_light_y =
+            top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
+
         let mut builder = MaterialBuilder::new();
-        builder
-            .add_frag_features(&[FragFeature::AmbientLight(0.2), FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
+        builder.add_frag_features(&[
+            FragFeature::AmbientLight(0.2),
+            FragFeature::PointLight(vec3(0., point_light_y, 0.)),
+        ])?;
 
         let top_color = &Color::new(1., 1., 1., 0.4);
         let bottom_color = &color::RED;
