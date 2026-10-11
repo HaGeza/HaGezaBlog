@@ -48,5 +48,3 @@ vite.config.ts.timestamp-*
 
 # End of https://www.toptal.com/developers/gitignore/api/rust,svelte,visualstudiocode
 
-# WASM and local dev versions of shaders created with `just prepare_shaders`
-sims/src/shaders/versions
