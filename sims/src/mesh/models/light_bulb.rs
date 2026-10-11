@@ -2,13 +2,14 @@ use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
 use macroquad::{
     color::{self, Color},
+    material::{Material, gl_use_default_material, gl_use_material},
     math::{Vec2, vec2, vec3},
     models::{Mesh, draw_mesh},
 };
 use thiserror::Error;
 
 use crate::{
-    mesh::material::FragFeature,
+    mesh::material::{FragFeature, MaterialBuilderError},
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
@@ -56,13 +57,7 @@ enum LightBulbProfileError {
     #[error("top and bottom border sections don't intersect")]
     NoIntersection,
     #[error("incorrect lathe profile: {0}")]
-    IncorrectProfile(LatheProfileError),
-}
-
-impl From<LatheProfileError> for LightBulbProfileError {
-    fn from(lathe_error: LatheProfileError) -> LightBulbProfileError {
-        LightBulbProfileError::IncorrectProfile(lathe_error)
-    }
+    IncorrectProfile(#[from] LatheProfileError),
 }
 
 struct LightBulbBottomProfileParams {
@@ -71,7 +66,7 @@ struct LightBulbBottomProfileParams {
     height: f32,
 }
 
-struct LightBulbMeshParams {
+struct LightBulbParams {
     top_profile_params: LightBulbTopProfileParams,
     bottom_profile_params: LightBulbBottomProfileParams,
     num_rings: usize,
@@ -80,40 +75,41 @@ struct LightBulbMeshParams {
 #[derive(Error, Debug)]
 enum LightBulbError {
     #[error("failed to create profile: {0}")]
-    ProfileError(LightBulbProfileError),
-}
-
-impl From<LightBulbProfileError> for LightBulbError {
-    fn from(profile_error: LightBulbProfileError) -> LightBulbError {
-        LightBulbError::ProfileError(profile_error)
-    }
-}
-
-impl From<LatheProfileError> for LightBulbError {
-    fn from(lathe_error: LatheProfileError) -> LightBulbError {
-        LightBulbError::ProfileError(LightBulbProfileError::IncorrectProfile(lathe_error))
-    }
+    ProfileError(#[from] LightBulbProfileError),
+    #[error("failed to build material: {0}")]
+    MaterialError(#[from] MaterialBuilderError),
 }
 
 pub struct LightBulb {
     bottom: Mesh,
     top_outer: Mesh,
     //top_inner: Mesh,
+    bottom_material: Material,
+    top_material: Material,
 }
 
 impl LightBulb {
-    fn new(params: LightBulbMeshParams) -> Result<Self, LightBulbError> {
+    fn new(params: LightBulbParams) -> Result<Self, LightBulbError> {
         let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
         let top_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
 
-        let builder = MaterialBuilder::new().add_frag_features(&[FragFeature::DirectionalLight(vec3(1., 0., 0.))]);
-        let bottom_material = builder.build()?;
-        let top_material = builder.build()?;
+        let mut builder = MaterialBuilder::new();
+        builder.add_frag_features(&[FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
 
         Ok(LightBulb {
-            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, true),
-            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), true),
+            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, false),
+            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), false),
+            bottom_material: builder.set_transparency(false).build()?,
+            top_material: builder.set_transparency(true).build()?,
         })
+    }
+
+    pub fn draw(&self) {
+        gl_use_material(&self.bottom_material);
+        draw_mesh(&self.bottom);
+        gl_use_material(&self.top_material);
+        draw_mesh(&self.top_outer);
+        gl_use_default_material();
     }
 
     fn create_bottom_profile(params: LightBulbBottomProfileParams) -> Result<LatheProfile, LightBulbProfileError> {
@@ -188,7 +184,7 @@ const NECK_DEFAULT_NUM_SECTIONS: usize = HEAD_DEFAULT_NUM_SECTIONS / 5;
 const NUM_RINGS: usize = HEAD_DEFAULT_NUM_SECTIONS + NECK_DEFAULT_NUM_SECTIONS;
 
 pub fn get_light_bulb() -> LightBulb {
-    LightBulb::new(LightBulbMeshParams {
+    LightBulb::new(LightBulbParams {
         top_profile_params: LightBulbTopProfileParams {
             head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
             head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,

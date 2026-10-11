@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
-use macroquad::Error;
 use macroquad::material::{Material, MaterialParams, load_material};
 use macroquad::math::Vec3;
 use miniquad::{
@@ -77,7 +76,7 @@ impl FragOutput {
 
     fn definition_str(&self) -> String {
         match self {
-            Self::FinalColor => "final_color = vec4(color.rgb * lighting, color.a);",
+            Self::FinalColor => "final_color = vec4(color.rgb * lighting, color.a) / 255.0;",
         }
         .to_string()
     }
@@ -111,24 +110,40 @@ impl From<&UniformWithValue> for UniformType {
     }
 }
 
+#[derive(Default)]
 pub struct MaterialBuilder {
     vert_outputs: HashSet<VertOutput>,
     frag_outputs: HashSet<FragOutput>,
     frag_uniforms: HashMap<String, UniformWithValue>,
     frag_feature_uses: Vec<String>,
+    transparency: bool,
 }
 
 #[derive(Error, Debug)]
-pub enum MaterialBuilderError {}
+pub enum MaterialBuilderError {
+    #[error("macroquad failure during material build: {0}")]
+    MacroquadError(#[from] macroquad::Error),
+}
 
 impl MaterialBuilder {
     pub fn new() -> Self {
-        MaterialBuilder {
-            vert_outputs: HashSet::new(),
-            frag_outputs: HashSet::new(),
-            frag_uniforms: HashMap::new(),
-            frag_feature_uses: vec![],
+        MaterialBuilder::default()
+    }
+
+    pub fn build(&self) -> Result<Material, MaterialBuilderError> {
+        let material = load_material(
+            miniquad::ShaderSource::Glsl { vertex: &self.build_vert_shader(), fragment: &self.build_frag_shader() },
+            self.build_material_params(),
+        )?;
+        for (name, val) in &self.frag_uniforms {
+            material.set_uniform(
+                name,
+                match val {
+                    UniformWithValue::Float3(f3) => *f3,
+                },
+            )
         }
+        Ok(material)
     }
 
     pub fn add_frag_features(&mut self, frag_features: &[FragFeature]) -> Result<&Self, MaterialBuilderError> {
@@ -136,6 +151,11 @@ impl MaterialBuilder {
             self.add_frag_feature(frag_feature)?
         }
         Ok(self)
+    }
+
+    pub fn set_transparency(&mut self, transparency: bool) -> &Self {
+        self.transparency = transparency;
+        self
     }
 
     fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
@@ -146,8 +166,8 @@ impl MaterialBuilder {
 
                 let uniform_name = self.get_next_uniform_name("light_direction");
                 self.frag_feature_uses
-                    .push(format!("lighting += max(dot(normalize(normal3), normalize({})), 0.1);", uniform_name));
-                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(light_direction.clone()));
+                    .push(format!("lighting += max(dot(normalize(normal3), normalize({})), 0.5);", uniform_name));
+                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_direction));
             },
         };
         Ok(())
@@ -162,17 +182,6 @@ impl MaterialBuilder {
             }
             counter += 1;
         }
-    }
-
-    pub fn build(&self) -> Result<Material, Error> {
-        let material = load_material(
-            miniquad::ShaderSource::Glsl { vertex: &self.build_vert_shader(), fragment: &self.build_frag_shader() },
-            self.build_material_params(),
-        )?;
-        for (name, val) in &self.frag_uniforms {
-            material.set_uniform(name, val)
-        }
-        Ok(material)
     }
 
     fn build_vert_shader(&self) -> String {
@@ -195,7 +204,7 @@ void main() {{
 }}",
             SHADER_HEADER,
             self.vert_outputs.iter().map(|vo| vo.output_str()).join("\n"),
-            self.vert_outputs.iter().map(|vo| vo.definition_str()).join("\n"),
+            self.vert_outputs.iter().map(|vo| vo.definition_str()).join("\n\t"),
         )
     }
 
@@ -229,19 +238,23 @@ void main() {{
 
     // TODO
     fn build_material_params(&self) -> MaterialParams {
+        let mut pipeline_params =
+            PipelineParams { cull_face: CullFace::Back, depth_test: Comparison::LessOrEqual, ..Default::default() };
+
+        if self.transparency {
+            pipeline_params.depth_write = false;
+            pipeline_params.color_blend = Some(BlendState::new(
+                Equation::Add,
+                BlendFactor::Value(BlendValue::SourceAlpha),
+                BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
+            ));
+        } else {
+            pipeline_params.depth_write = true;
+        }
+
         MaterialParams {
-            uniforms: self.frag_uniforms.iter().map(|(name, val)| UniformDesc::new(&name, val.into())).collect(),
-            pipeline_params: PipelineParams {
-                depth_test: Comparison::LessOrEqual,
-                depth_write: false,
-                cull_face: CullFace::Back,
-                color_blend: Some(BlendState::new(
-                    Equation::Add,
-                    BlendFactor::Value(BlendValue::SourceAlpha),
-                    BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
-                )),
-                ..Default::default()
-            },
+            uniforms: self.frag_uniforms.iter().map(|(name, val)| UniformDesc::new(name, val.into())).collect(),
+            pipeline_params,
             ..MaterialParams::default()
         }
     }
