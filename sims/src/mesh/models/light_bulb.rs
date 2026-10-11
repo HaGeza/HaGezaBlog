@@ -82,8 +82,8 @@ enum LightBulbError {
 
 pub struct LightBulb {
     bottom: Mesh,
+    top_inner: Mesh,
     top_outer: Mesh,
-    //top_inner: Mesh
     bottom_material: Material,
     top_material: Material,
 }
@@ -91,15 +91,20 @@ pub struct LightBulb {
 impl LightBulb {
     fn new(params: LightBulbParams) -> Result<Self, LightBulbError> {
         let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
-        let top_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
+        let top_outer_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
+        let top_inner_profile = top_outer_profile.scale(0.98);
 
         let mut builder = MaterialBuilder::new();
         builder
             .add_frag_features(&[FragFeature::AmbientLight(0.2), FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
 
+        let top_color = &Color::new(1., 1., 1., 0.4);
+        let bottom_color = &color::RED;
+
         Ok(LightBulb {
-            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::RED, false),
-            top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), false),
+            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, bottom_color, false),
+            top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
+            top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
             bottom_material: builder.set_transparency(false).build()?,
             top_material: builder.set_transparency(true).build()?,
         })
@@ -110,6 +115,7 @@ impl LightBulb {
         draw_mesh(&self.bottom);
         gl_use_material(&self.top_material);
         unsafe {
+            draw_transparent_mesh(&self.top_inner);
             draw_transparent_mesh(&self.top_outer);
         }
         gl_use_default_material();
@@ -161,10 +167,11 @@ impl LightBulb {
             return Err(LightBulbProfileError::NoIntersection);
         };
 
-        let mut neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
-        neck[0].y += 0.01;
+        let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
+        // add an extra buffer so that the top and bottom do not overlap
+        let buffer_height = 0.1;
 
-        let points: Vec<Vec2> = vec![vec2(0., neck[0].y)]
+        let points: Vec<Vec2> = vec![vec2(0.0, neck[0].y + buffer_height), vec2(neck[0].x, neck[0].y + buffer_height)]
             .into_iter()
             .chain(neck)
             .chain(head_semicircle.into_iter().skip(1))

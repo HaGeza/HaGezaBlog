@@ -1,4 +1,4 @@
-use std::ops::{Add, Div};
+use std::ops::{Add, Div, Mul};
 
 use macroquad::math::Vec2;
 use thiserror::Error;
@@ -22,6 +22,19 @@ impl LatheProfile {
             return Err(LatheProfileError::NegativeX);
         }
         Ok(LatheProfile { points: points.to_vec(), normals: Self::get_normals(points) })
+    }
+
+    pub fn scale(&self, scale: f32) -> LatheProfile {
+        // TODO add error handling
+        LatheProfile {
+            points: self
+                .points
+                .iter()
+                .zip(self.normals.iter())
+                .map(|(pos, normal)| pos.add(normal.mul(scale - 1.0)))
+                .collect(),
+            normals: self.normals.iter().map(|normal| normal.mul(scale)).collect(),
+        }
     }
 
     pub fn points(&self) -> &[Vec2] {
