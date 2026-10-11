@@ -47,3 +47,4 @@ vite.config.ts.timestamp-*
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/rust,svelte,visualstudiocode
+

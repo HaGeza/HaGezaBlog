@@ -1,8 +1,6 @@
 use macroquad::math::{Vec2, vec2};
 use serde_yaml::Value;
 use std::f32::consts::FRAC_PI_4;
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
 
 fn _parse_f32(value: &Value) -> f32 {
     value.as_f64().unwrap_or(CameraWControlsConfig::default().longitude as f64) as f32
@@ -13,12 +11,7 @@ fn _parse_vec2(value: &Value) -> Vec2 {
 }
 
 fn _load_config() -> Result<Value, Box<dyn std::error::Error>> {
-    #[cfg(target_arch = "wasm32")]
-    let config_content = include_str!("../config.yaml").to_string();
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let config_content = fs::read_to_string("config.yaml")?;
-
+    let config_content = include_str!("../../config.yaml").to_string();
     Ok(serde_yaml::from_str::<Value>(&config_content)?)
 }
 

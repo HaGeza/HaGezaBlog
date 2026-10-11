@@ -8,6 +8,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 approx = "0.5.1"
+itertools = "0.15.0"
 macroquad = "0.4.14"
 miniquad = "0.4.8"
 serde_yaml = "0.9"

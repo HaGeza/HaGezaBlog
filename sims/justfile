@@ -29,6 +29,9 @@ run_sim sim="":
     cargo build --release --bin {{sim}}
     ./target/release/{{sim}}
 
+build_sim sim="":
+    cargo build --bin {{sim}}
+
 # Clean build artifacts
 clean:
     cargo clean
