@@ -66,17 +66,19 @@ impl GlslOutputVar for FragOutput {
     }
 }
 
+const LIGHTING_VAR: &str = "lighting";
+
 impl FragOutput {
     fn init_str(&self) -> String {
         match self {
-            Self::FinalColor => "vec3 lighting = vec3(0.0);",
+            Self::FinalColor => format!("vec3 {LIGHTING_VAR} = vec3(0.0);"),
         }
         .to_string()
     }
 
     fn definition_str(&self) -> String {
         match self {
-            Self::FinalColor => "final_color = vec4(color.rgb * lighting, color.a) / 255.0;",
+            Self::FinalColor => format!("final_color = vec4(color.rgb * {LIGHTING_VAR}, color.a) / 255.0;"),
         }
         .to_string()
     }
@@ -84,10 +86,12 @@ impl FragOutput {
 
 pub enum FragFeature {
     DirectionalLight(Vec3),
+    AmbientLight(f32),
 }
 
 enum UniformWithValue {
     Float3(Vec3),
+    Float(f32),
 }
 
 impl UniformWithValue {
@@ -96,6 +100,7 @@ impl UniformWithValue {
             "uniform {} {};",
             match self {
                 Self::Float3(_) => "vec3",
+                Self::Float(_) => "float",
             },
             name
         )
@@ -106,6 +111,7 @@ impl From<&UniformWithValue> for UniformType {
     fn from(uniform_with_value: &UniformWithValue) -> UniformType {
         match uniform_with_value {
             UniformWithValue::Float3(_) => UniformType::Float3,
+            UniformWithValue::Float(_) => UniformType::Float1,
         }
     }
 }
@@ -136,12 +142,14 @@ impl MaterialBuilder {
             self.build_material_params(),
         )?;
         for (name, val) in &self.frag_uniforms {
-            material.set_uniform(
-                name,
-                match val {
-                    UniformWithValue::Float3(f3) => *f3,
+            match val {
+                UniformWithValue::Float3(f3) => {
+                    material.set_uniform(name, *f3);
                 },
-            )
+                UniformWithValue::Float(f) => {
+                    material.set_uniform(name, *f);
+                },
+            };
         }
         Ok(material)
     }
@@ -166,8 +174,16 @@ impl MaterialBuilder {
 
                 let uniform_name = self.get_next_uniform_name("light_direction");
                 self.frag_feature_uses
-                    .push(format!("lighting += max(dot(normalize(normal3), normalize({})), 0.5);", uniform_name));
+                    .push(format!("{LIGHTING_VAR} += max(dot(normalize(normal3), normalize({uniform_name})), 0.0);"));
                 self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_direction));
+            },
+            FragFeature::AmbientLight(ambient_intensity) => {
+                self.vert_outputs.insert(VertOutput::Color);
+                self.frag_outputs.insert(FragOutput::FinalColor);
+
+                let uniform_name = self.get_next_uniform_name("ambient_intensity");
+                self.frag_feature_uses.push(format!("{LIGHTING_VAR} += {uniform_name};"));
+                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float(*ambient_intensity));
             },
         };
         Ok(())
@@ -204,7 +220,7 @@ void main() {{
 }}",
             SHADER_HEADER,
             self.vert_outputs.iter().map(|vo| vo.output_str()).join("\n"),
-            self.vert_outputs.iter().map(|vo| vo.definition_str()).join("\n\t"),
+            self.vert_outputs.iter().map(|vo| vo.definition_str()).join("\n    "),
         )
     }
 
@@ -230,9 +246,9 @@ void main() {{
             self.vert_outputs.iter().map(|vo| vo.input_str()).join("\n"),
             self.frag_uniforms.iter().map(|(name, val)| val.declaration_str(name)).join("\n"),
             self.frag_outputs.iter().map(|fo| fo.output_str()).join("\n"),
-            self.frag_outputs.iter().map(|fo| fo.init_str()).join("\n"),
-            self.frag_feature_uses.iter().join("\n"),
-            self.frag_outputs.iter().map(|fo| fo.definition_str()).join("\n"),
+            self.frag_outputs.iter().map(|fo| fo.init_str()).join("\n    "),
+            self.frag_feature_uses.iter().join("\n    "),
+            self.frag_outputs.iter().map(|fo| fo.definition_str()).join("\n    "),
         )
     }
 

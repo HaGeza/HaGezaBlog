@@ -83,7 +83,7 @@ enum LightBulbError {
 pub struct LightBulb {
     bottom: Mesh,
     top_outer: Mesh,
-    //top_inner: Mesh,
+    //top_inner: Mesh
     bottom_material: Material,
     top_material: Material,
 }
@@ -94,10 +94,11 @@ impl LightBulb {
         let top_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
 
         let mut builder = MaterialBuilder::new();
-        builder.add_frag_features(&[FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
+        builder
+            .add_frag_features(&[FragFeature::AmbientLight(0.1), FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
 
         Ok(LightBulb {
-            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::GRAY, false),
+            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::RED, false),
             top_outer: create_lathe_mesh(&top_profile, params.num_rings, &Color::new(1., 1., 1., 0.4), false),
             bottom_material: builder.set_transparency(false).build()?,
             top_material: builder.set_transparency(true).build()?,
@@ -160,8 +161,9 @@ impl LightBulb {
 
         let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
 
-        let points: Vec<Vec2> = neck
+        let points: Vec<Vec2> = vec![vec2(0., neck[0].y)]
             .into_iter()
+            .chain(neck)
             .chain(head_semicircle.into_iter().skip(1))
             .map(|mut pt| {
                 pt.x = pt.x.max(0.);
