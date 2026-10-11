@@ -57,7 +57,7 @@ fn create_lathe_indices(
             let bot_right = next_ring * profile.len() + pt_ind;
             let top_right = next_ring * profile.len() + pt_ind + 1;
 
-            // Add non-empty new faces in counterclockwise vertex order:
+            // Add non-empty new faces in clockwise vertex order:
             add_face(vertices, &mut indices, [top_left as u16, bot_left as u16, bot_right as u16], reverse_faces);
             add_face(vertices, &mut indices, [top_left as u16, bot_right as u16, top_right as u16], reverse_faces);
         }

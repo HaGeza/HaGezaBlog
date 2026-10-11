@@ -1,0 +1,4 @@
+- Figure out a way to repeat the last search in `<leader>/` snacks menu
+- Figure out a way to do global search and replace with snacks
+- Add file moving and file rename lsp support
+- Add function/method/struct etc. moving lsp support

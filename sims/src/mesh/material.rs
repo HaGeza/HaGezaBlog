@@ -3,6 +3,9 @@ use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 use macroquad::material::{Material, MaterialParams, load_material};
 use macroquad::math::Vec3;
+use macroquad::models::{Mesh, draw_mesh};
+use macroquad::window::get_internal_gl;
+use miniquad::gl::{self, GL_FALSE, GL_TRUE};
 use miniquad::{
     BlendFactor, BlendState, BlendValue, Comparison, CullFace, Equation, PipelineParams, UniformDesc, UniformType,
 };
@@ -258,7 +261,7 @@ void main() {{
             PipelineParams { cull_face: CullFace::Back, depth_test: Comparison::LessOrEqual, ..Default::default() };
 
         if self.transparency {
-            pipeline_params.depth_write = false;
+            pipeline_params.depth_write = true; // should be `false` after https://github.com/not-fl3/miniquad/issues/670 is fixed
             pipeline_params.color_blend = Some(BlendState::new(
                 Equation::Add,
                 BlendFactor::Value(BlendValue::SourceAlpha),
@@ -273,5 +276,23 @@ void main() {{
             pipeline_params,
             ..MaterialParams::default()
         }
+    }
+}
+
+/// Draw transparent mesh
+///
+/// # Safety
+///
+/// - The function is unsafe due to using GL directly.
+/// - It should be removed after https://github.com/not-fl3/miniquad/issues/670 is fixed
+pub unsafe fn draw_transparent_mesh(mesh: &Mesh) {
+    unsafe {
+        get_internal_gl().flush();
+        gl::glDepthMask(GL_FALSE as u8);
+    }
+    draw_mesh(mesh);
+    unsafe {
+        get_internal_gl().flush();
+        gl::glDepthMask(GL_TRUE as u8);
     }
 }

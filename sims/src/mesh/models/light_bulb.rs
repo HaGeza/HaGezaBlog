@@ -9,7 +9,7 @@ use macroquad::{
 use thiserror::Error;
 
 use crate::{
-    mesh::material::{FragFeature, MaterialBuilderError},
+    mesh::material::{FragFeature, MaterialBuilderError, draw_transparent_mesh},
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
@@ -95,7 +95,7 @@ impl LightBulb {
 
         let mut builder = MaterialBuilder::new();
         builder
-            .add_frag_features(&[FragFeature::AmbientLight(0.1), FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
+            .add_frag_features(&[FragFeature::AmbientLight(0.2), FragFeature::DirectionalLight(vec3(1., 0., 0.))])?;
 
         Ok(LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, &color::RED, false),
@@ -109,7 +109,9 @@ impl LightBulb {
         gl_use_material(&self.bottom_material);
         draw_mesh(&self.bottom);
         gl_use_material(&self.top_material);
-        draw_mesh(&self.top_outer);
+        unsafe {
+            draw_transparent_mesh(&self.top_outer);
+        }
         gl_use_default_material();
     }
 
@@ -159,7 +161,8 @@ impl LightBulb {
             return Err(LightBulbProfileError::NoIntersection);
         };
 
-        let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
+        let mut neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
+        neck[0].y += 0.01;
 
         let points: Vec<Vec2> = vec![vec2(0., neck[0].y)]
             .into_iter()
