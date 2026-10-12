@@ -29,7 +29,7 @@ trait GlslOutputVar {
     }
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Clone)]
 enum VertOutput {
     Color,
     Normal,
@@ -58,7 +58,7 @@ impl VertOutput {
     }
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Clone)]
 enum FragOutput {
     FinalColor,
 }
@@ -98,6 +98,7 @@ pub enum FragFeature {
     PointLight { position: Vec3, color: Vec3 },
 }
 
+#[derive(Clone)]
 enum UniformWithValue {
     Float3(Vec3),
 }
@@ -122,7 +123,7 @@ impl From<&UniformWithValue> for UniformType {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct MaterialBuilder {
     vert_outputs: HashSet<VertOutput>,
     frag_outputs: HashSet<FragOutput>,
