@@ -84,21 +84,22 @@ impl FragOutput {
 
     fn definition_str(&self) -> String {
         match self {
-            Self::FinalColor => format!("final_color = vec4(color.rgb * {LIGHTING_VAR}, color.a) / 255.0;"),
+            Self::FinalColor => {
+                format!("final_color = vec4(color.rgb * {LIGHTING_VAR}, color.a) / 255.0;")
+            },
         }
         .to_string()
     }
 }
 
 pub enum FragFeature {
-    AmbientLight(f32),
-    DirectionalLight(Vec3),
-    PointLight(Vec3),
+    AmbientLight(Vec3),
+    DirectionalLight { direction: Vec3, color: Vec3 },
+    PointLight { position: Vec3, color: Vec3 },
 }
 
 enum UniformWithValue {
     Float3(Vec3),
-    Float(f32),
 }
 
 impl UniformWithValue {
@@ -107,7 +108,6 @@ impl UniformWithValue {
             "uniform {} {};",
             match self {
                 Self::Float3(_) => "vec3",
-                Self::Float(_) => "float",
             },
             name
         )
@@ -118,7 +118,6 @@ impl From<&UniformWithValue> for UniformType {
     fn from(uniform_with_value: &UniformWithValue) -> UniformType {
         match uniform_with_value {
             UniformWithValue::Float3(_) => UniformType::Float3,
-            UniformWithValue::Float(_) => UniformType::Float1,
         }
     }
 }
@@ -153,54 +152,56 @@ impl MaterialBuilder {
                 UniformWithValue::Float3(f3) => {
                     material.set_uniform(name, *f3);
                 },
-                UniformWithValue::Float(f) => {
-                    material.set_uniform(name, *f);
-                },
             };
         }
         Ok(material)
     }
 
-    pub fn add_frag_features(&mut self, frag_features: &[FragFeature]) -> Result<&Self, MaterialBuilderError> {
+    pub fn add_frag_features(&mut self, frag_features: &[FragFeature]) -> Result<&mut Self, MaterialBuilderError> {
         for frag_feature in frag_features {
             self.add_frag_feature(frag_feature)?
         }
         Ok(self)
     }
 
-    pub fn set_transparency(&mut self, transparency: bool) -> &Self {
+    pub fn set_transparency(&mut self, transparency: bool) -> &mut Self {
         self.transparency = transparency;
         self
     }
 
     fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
         match frag_feature {
-            FragFeature::AmbientLight(ambient_intensity) => {
+            FragFeature::AmbientLight(color) => {
                 self.vert_outputs.insert(VertOutput::Color);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 
-                let uniform_name = self.get_next_uniform_name("ambient_intensity");
-                self.frag_feature_uses.push(format!("{LIGHTING_VAR} += {uniform_name};"));
-                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float(*ambient_intensity));
+                let ambient_uniform = self.get_next_uniform_name("ambient_color");
+                self.frag_feature_uses.push(format!("{LIGHTING_VAR} += {ambient_uniform};"));
+                self.frag_uniforms.insert(ambient_uniform, UniformWithValue::Float3(*color));
             },
-            FragFeature::DirectionalLight(light_direction) => {
+            FragFeature::DirectionalLight { direction, color } => {
                 self.vert_outputs.extend([VertOutput::Color, VertOutput::Normal]);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 
-                let uniform_name = self.get_next_uniform_name("light_direction");
-                self.frag_feature_uses
-                    .push(format!("{LIGHTING_VAR} += max(dot(normalize(normal3), normalize({uniform_name})), 0.0);"));
-                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_direction));
+                let direction_uniform = self.get_next_uniform_name("light_direction");
+                let color_uniform = self.get_next_uniform_name("light_color");
+                self.frag_feature_uses.push(format!(
+                    "{LIGHTING_VAR} += {color_uniform} * max(dot(normalize(normal3), normalize({direction_uniform})), 0.0);"
+                ));
+                self.frag_uniforms.insert(direction_uniform, UniformWithValue::Float3(*direction));
+                self.frag_uniforms.insert(color_uniform, UniformWithValue::Float3(*color));
             },
-            FragFeature::PointLight(light_position) => {
+            FragFeature::PointLight { position, color } => {
                 self.vert_outputs.extend([VertOutput::Color, VertOutput::Normal, VertOutput::Position]);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 
-                let uniform_name = self.get_next_uniform_name("light_position");
+                let position_uniform = self.get_next_uniform_name("light_position");
+                let color_uniform = self.get_next_uniform_name("light_color");
                 self.frag_feature_uses.push(format!(
-                    "{LIGHTING_VAR} += max(dot(normalize(normal3), normalize({uniform_name} - position3)), 0.0);"
+                    "{LIGHTING_VAR} += {color_uniform} * max(dot(normalize(normal3), normalize({position_uniform} - position3)), 0.0);"
                 ));
-                self.frag_uniforms.insert(uniform_name, UniformWithValue::Float3(*light_position));
+                self.frag_uniforms.insert(position_uniform, UniformWithValue::Float3(*position));
+                self.frag_uniforms.insert(color_uniform, UniformWithValue::Float3(*color));
             },
         };
         Ok(())
@@ -269,7 +270,6 @@ void main() {{
         )
     }
 
-    // TODO
     fn build_material_params(&self) -> MaterialParams {
         let mut pipeline_params =
             PipelineParams { cull_face: CullFace::Back, depth_test: Comparison::LessOrEqual, ..Default::default() };
