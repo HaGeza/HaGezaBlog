@@ -85,42 +85,66 @@ pub struct LightBulb {
     top_inner: Mesh,
     top_outer: Mesh,
     bottom_material: Material,
-    top_material: Material,
+    top_outer_material: Material,
+    top_inner_material: Material,
 }
 
 impl LightBulb {
     fn new(params: LightBulbParams) -> Result<Self, LightBulbError> {
         let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
-        let top_outer_profile = Self::create_top_profile(params.top_profile_params, &bottom_profile)?;
+        let top_outer_profile = Self::create_top_outer_profile(params.top_profile_params, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
 
         let point_light_y =
             top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
+        let top_alpha = 0.4;
+        let (light_direciton, directional_light_color) = (vec3(1., 1., 0.), vec3(0.1, 0.1, 0.1));
 
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(&[
-            FragFeature::AmbientLight(0.2),
-            FragFeature::PointLight(vec3(0., point_light_y, 0.)),
+            FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
+            FragFeature::PointLight { position: vec3(0., point_light_y, 0.), color: vec3(0.8, 0.6, 0.2) },
         ])?;
 
-        let top_color = &Color::new(1., 1., 1., 0.4);
+        let top_color = &Color::new(1., 1., 1., top_alpha);
         let bottom_color = &color::RED;
 
         Ok(LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, bottom_color, false),
             top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
             top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
-            bottom_material: builder.set_transparency(false).build()?,
-            top_material: builder.set_transparency(true).build()?,
+            bottom_material: builder
+                .add_frag_features(&[FragFeature::DirectionalLight {
+                    direction: light_direciton,
+                    color: directional_light_color,
+                }])?
+                .build()?,
+            top_outer_material: builder
+                .set_transparency(true)
+                .add_frag_features(&[FragFeature::DirectionalLight {
+                    direction: light_direciton,
+                    color: directional_light_color,
+                }])?
+                .build()?,
+            top_inner_material: builder
+                .set_transparency(true)
+                .add_frag_features(&[FragFeature::DirectionalLight {
+                    direction: light_direciton,
+                    color: directional_light_color * (1. - top_alpha),
+                }])?
+                .build()?,
         })
     }
 
     pub fn draw(&self) {
         gl_use_material(&self.bottom_material);
         draw_mesh(&self.bottom);
-        gl_use_material(&self.top_material);
+        gl_use_material(&self.top_inner_material);
         unsafe {
             draw_transparent_mesh(&self.top_inner);
+        }
+        gl_use_material(&self.top_outer_material);
+        unsafe {
             draw_transparent_mesh(&self.top_outer);
         }
         gl_use_default_material();
@@ -135,7 +159,7 @@ impl LightBulb {
         ])?)
     }
 
-    fn create_top_profile(
+    fn create_top_outer_profile(
         params: LightBulbTopProfileParams,
         bottom_profile: &LatheProfile,
     ) -> Result<LatheProfile, LightBulbProfileError> {
@@ -173,10 +197,8 @@ impl LightBulb {
         };
 
         let neck: Vec<Vec2> = get_quadratic_bezier([neck_a, &neck_b, &neck_c], params.neck_num_sections);
-        // add an extra buffer so that the top and bottom do not overlap
-        let buffer_height = 0.1;
 
-        let points: Vec<Vec2> = vec![vec2(0.0, neck[0].y + buffer_height), vec2(neck[0].x, neck[0].y + buffer_height)]
+        let points: Vec<Vec2> = vec![vec2(0.0, neck[0].y)]
             .into_iter()
             .chain(neck)
             .chain(head_semicircle.into_iter().skip(1))
