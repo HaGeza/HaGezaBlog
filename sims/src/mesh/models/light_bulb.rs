@@ -114,12 +114,14 @@ impl LightBulb {
             top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
             top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
             bottom_material: builder
+                .clone()
                 .add_frag_features(&[FragFeature::DirectionalLight {
                     direction: light_direciton,
                     color: directional_light_color,
                 }])?
                 .build()?,
             top_outer_material: builder
+                .clone()
                 .set_transparency(true)
                 .add_frag_features(&[FragFeature::DirectionalLight {
                     direction: light_direciton,
@@ -127,6 +129,7 @@ impl LightBulb {
                 }])?
                 .build()?,
             top_inner_material: builder
+                .clone()
                 .set_transparency(true)
                 .add_frag_features(&[FragFeature::DirectionalLight {
                     direction: light_direciton,
