@@ -1,0 +1,9 @@
+position = { x = 0.0, y = 0.0, z = -5.0 }
+
+point_light_color = { x = 0.8, y = 0.6, z = 0.2 }
+
+# Head
+head_num_sections = 20
+head_radius = 2.0,
+head_radians = 2.3561944902 # 3/4 PI
+top_alpha = 0.4

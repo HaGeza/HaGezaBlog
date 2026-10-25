@@ -11,8 +11,9 @@ approx = "0.5.1"
 itertools = "0.15.0"
 macroquad = "0.4.14"
 miniquad = "0.4.8"
-serde_yaml = "0.9"
+serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.20"
+toml = "1.1.8"
 
 # Enable a large amount of optimization in the dev profile for dependencies.
 [profile.dev.package."*"]

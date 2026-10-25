@@ -7,6 +7,7 @@ use macroquad::{
     models::{Mesh, draw_mesh},
     window::get_internal_gl,
 };
+use serde::Deserialize;
 use thiserror::Error;
 
 use crate::{
@@ -15,6 +16,7 @@ use crate::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
     },
+    util::config::{ConfigLoadError, deserialize_vec3, load_config},
 };
 use crate::{
     mesh::{lathe_mesh::create_lathe_mesh, material::MaterialBuilder},
@@ -73,12 +75,26 @@ struct LightBulbParams {
     num_rings: usize,
 }
 
+#[derive(Deserialize)]
+struct LightBulbConfig {
+    #[serde(deserialize_with = "deserialize_vec3")]
+    position: Vec3,
+    #[serde(deserialize_with = "deserialize_vec3")]
+    point_light_color: Vec3,
+    head_num_sections: usize,
+    head_radius: f32,
+    head_radians: f32,
+    top_alpha: f32,
+}
+
 #[derive(Error, Debug)]
-enum LightBulbError {
+pub enum LightBulbError {
     #[error("failed to create profile: {0}")]
     ProfileError(#[from] LightBulbProfileError),
     #[error("failed to build material: {0}")]
     MaterialError(#[from] MaterialBuilderError),
+    #[error("failed to load config: {0}")]
+    ConfigError(#[from] ConfigLoadError),
 }
 
 struct LightBulbMaterials {
@@ -232,6 +248,29 @@ impl LightBulb {
             .collect();
 
         Ok(LatheProfile::new(&points)?)
+    }
+
+    pub fn from_config(config_path: &str) -> Result<LightBulb, LightBulbError> {
+        let config: LightBulbConfig = load_config(config_path)?;
+        let neck_num_sections = config.head_num_sections / 5;
+
+        LightBulb::new(
+            LightBulbParams {
+                top_profile_params: LightBulbTopProfileParams {
+                    head_num_sections: config.head_num_sections,
+                    head_semicircle_radius: config.head_radius,
+                    head_semicircle_radians: config.head_radians,
+                    neck_num_sections,
+                },
+                bottom_profile_params: LightBulbBottomProfileParams {
+                    start_y: -config.head_radians * 0.85,
+                    half_width: config.head_radians * 0.4,
+                    height: config.head_radians * 0.4,
+                },
+                num_rings: config.head_num_sections + neck_num_sections,
+            },
+            Mat4::from_translation(config.position),
+        )
     }
 }
 

@@ -1,6 +1,7 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 
-use crate::config::camera::CameraWControlsConfig;
+use crate::util::config::{ConfigLoadError, deserialize_vec2, load_config};
 use macroquad::prelude::*;
 
 pub struct CameraWControls {
@@ -30,12 +31,34 @@ fn _get_camera_relative_position(longitude: f32, latitude: f32, radius: f32) -> 
 }
 
 impl CameraWControls {
-    pub fn from_config(config: CameraWControlsConfig) -> Self {
+    pub fn from_config(config_path: &str) -> Result<Self, ConfigLoadError> {
+        #[derive(Deserialize)]
+        struct CameraWControlsConfig {
+            longitude: f32,
+            latitude: f32,
+            radius: f32,
+            #[serde(deserialize_with = "deserialize_vec2")]
+            rotate_mouse_sensitivity: Vec2,
+            #[serde(deserialize_with = "deserialize_vec2")]
+            pan_mouse_sensitivity: Vec2,
+            zoom_mouse_sensitivity: f32,
+            #[serde(deserialize_with = "deserialize_vec2")]
+            rotate_touch_sensitivity: Vec2,
+            #[serde(deserialize_with = "deserialize_vec2")]
+            pan_touch_sensitivity: Vec2,
+            zoom_touch_sensitivity: f32,
+            touch_zoom_threshold: f32,
+            z_near: f32,
+            z_far: f32,
+        }
+
+        let config: CameraWControlsConfig = load_config(config_path)?;
+
         let longitude = config.longitude;
         let latitude = config.latitude;
         let radius = config.radius;
 
-        Self {
+        Ok(Self {
             camera: Camera3D {
                 position: _get_camera_relative_position(longitude, latitude, radius),
                 target: vec3(0., 0., 0.),
@@ -56,7 +79,7 @@ impl CameraWControls {
             updated: false,
             mouse_delta: Vec2::ZERO,
             touch_positions: HashMap::default(),
-        }
+        })
     }
 }
 

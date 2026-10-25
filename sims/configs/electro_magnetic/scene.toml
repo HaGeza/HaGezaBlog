@@ -1,0 +1,8 @@
+directional_light = {
+  direction = { x = 0.0, y = 0.0, z = 0.0 },
+  color = { x = 0.0, y = 0.0, z = 0.0 }
+}
+
+ambient_light = {
+  color = { x = 0.0, y = 0.0, z = 0.0 }
+}

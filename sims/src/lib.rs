@@ -1,9 +1,4 @@
 pub mod camera_w_controls;
-pub mod config {
-    pub mod camera;
-    pub mod common;
-    pub mod macroquad;
-}
 pub mod mesh {
     pub mod common;
     pub(in crate::mesh) mod lathe_mesh;
@@ -18,7 +13,9 @@ pub mod shape {
     pub mod common;
     pub mod lathe_profile;
 }
-pub(crate) mod util {
+pub mod util {
+    pub mod config;
     pub(crate) mod linalg;
+    pub mod macroquad;
     pub(crate) mod vec;
 }
