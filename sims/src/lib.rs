@@ -1,6 +1,7 @@
 pub mod camera_w_controls;
 pub mod config {
     pub mod camera;
+    pub mod common;
     pub mod macroquad;
 }
 pub mod mesh {

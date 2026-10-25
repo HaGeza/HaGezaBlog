@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::config::camera::load_camera_config;
+use crate::config::camera::CameraWControlsConfig;
 use macroquad::prelude::*;
 
 pub struct CameraWControls {
@@ -29,10 +29,8 @@ fn _get_camera_relative_position(longitude: f32, latitude: f32, radius: f32) -> 
     vec3(radius * latitude.cos() * longitude.sin(), radius * latitude.sin(), radius * latitude.cos() * longitude.cos())
 }
 
-impl Default for CameraWControls {
-    fn default() -> Self {
-        let config = load_camera_config().unwrap_or_default();
-
+impl CameraWControls {
+    pub fn from_config(config: CameraWControlsConfig) -> Self {
         let longitude = config.longitude;
         let latitude = config.latitude;
         let radius = config.radius;

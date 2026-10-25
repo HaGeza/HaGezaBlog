@@ -3,8 +3,9 @@ use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 use macroquad::{
     color::{self, Color},
     material::{Material, gl_use_default_material, gl_use_material},
-    math::{Vec2, vec2, vec3},
+    math::{Mat4, Vec2, Vec3, vec2, vec3},
     models::{Mesh, draw_mesh},
+    window::get_internal_gl,
 };
 use thiserror::Error;
 
@@ -80,25 +81,30 @@ enum LightBulbError {
     MaterialError(#[from] MaterialBuilderError),
 }
 
+struct LightBulbMaterials {
+    bottom: Material,
+    top_outer: Material,
+    top_inner: Material,
+}
+
 pub struct LightBulb {
     bottom: Mesh,
     top_inner: Mesh,
     top_outer: Mesh,
-    bottom_material: Material,
-    top_outer_material: Material,
-    top_inner_material: Material,
+    materials: LightBulbMaterials,
+    model_matrix: Mat4,
 }
 
 impl LightBulb {
-    fn new(params: LightBulbParams) -> Result<Self, LightBulbError> {
+    fn new(params: LightBulbParams, model_matrix: Mat4) -> Result<Self, LightBulbError> {
         let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
         let top_outer_profile = Self::create_top_outer_profile(params.top_profile_params, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
 
         let point_light_y =
             top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
+        let point_light_pos = model_matrix.transform_point3(vec3(0., point_light_y, 0.));
         let top_alpha = 0.4;
-        let (light_direciton, directional_light_color) = (vec3(1., 1., 0.), vec3(0.1, 0.1, 0.1));
 
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(&[
@@ -113,14 +119,29 @@ impl LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, bottom_color, false),
             top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
             top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
-            bottom_material: builder
+            materials: Self::get_materials(point_light_pos, top_alpha)?,
+            model_matrix,
+        })
+    }
+
+    fn get_materials(point_light_pos: Vec3, top_alpha: f32) -> Result<LightBulbMaterials, MaterialBuilderError> {
+        let (light_direciton, directional_light_color) = (vec3(1., 1., 0.), vec3(0.1, 0.1, 0.1));
+
+        let mut builder = MaterialBuilder::new();
+        builder.add_frag_features(&[
+            FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
+            FragFeature::PointLight { position: point_light_pos, color: vec3(0.8, 0.6, 0.2) },
+        ])?;
+
+        Ok(LightBulbMaterials {
+            bottom: builder
                 .clone()
                 .add_frag_features(&[FragFeature::DirectionalLight {
                     direction: light_direciton,
                     color: directional_light_color,
                 }])?
                 .build()?,
-            top_outer_material: builder
+            top_outer: builder
                 .clone()
                 .set_transparency(true)
                 .add_frag_features(&[FragFeature::DirectionalLight {
@@ -128,7 +149,7 @@ impl LightBulb {
                     color: directional_light_color,
                 }])?
                 .build()?,
-            top_inner_material: builder
+            top_inner: builder
                 .clone()
                 .set_transparency(true)
                 .add_frag_features(&[FragFeature::DirectionalLight {
@@ -140,16 +161,15 @@ impl LightBulb {
     }
 
     pub fn draw(&self) {
-        gl_use_material(&self.bottom_material);
+        gl_use_material(&self.materials.bottom);
+        unsafe {
+            get_internal_gl().quad_gl.push_model_matrix(self.model_matrix);
+        }
         draw_mesh(&self.bottom);
-        gl_use_material(&self.top_inner_material);
-        unsafe {
-            draw_transparent_mesh(&self.top_inner);
-        }
-        gl_use_material(&self.top_outer_material);
-        unsafe {
-            draw_transparent_mesh(&self.top_outer);
-        }
+        gl_use_material(&self.materials.top_inner);
+        draw_transparent_mesh(&self.top_inner);
+        gl_use_material(&self.materials.top_outer);
+        draw_transparent_mesh(&self.top_outer);
         gl_use_default_material();
     }
 
@@ -225,21 +245,24 @@ const HEAD_SEMICIRCLE_DEFAULT_RADIANS: f32 = 3. * FRAC_PI_4;
 const NECK_DEFAULT_NUM_SECTIONS: usize = HEAD_DEFAULT_NUM_SECTIONS / 5;
 const NUM_RINGS: usize = HEAD_DEFAULT_NUM_SECTIONS + NECK_DEFAULT_NUM_SECTIONS;
 
-pub fn get_light_bulb() -> LightBulb {
-    LightBulb::new(LightBulbParams {
-        top_profile_params: LightBulbTopProfileParams {
-            head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
-            head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,
-            head_semicircle_radius: HEAD_SEMICIRCLE_DEFAULT_RADIUS,
-            neck_num_sections: NECK_DEFAULT_NUM_SECTIONS,
+pub fn get_light_bulb(model_matrix: Mat4) -> LightBulb {
+    LightBulb::new(
+        LightBulbParams {
+            top_profile_params: LightBulbTopProfileParams {
+                head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
+                head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,
+                head_semicircle_radius: HEAD_SEMICIRCLE_DEFAULT_RADIUS,
+                neck_num_sections: NECK_DEFAULT_NUM_SECTIONS,
+            },
+            bottom_profile_params: LightBulbBottomProfileParams {
+                start_y: BOTTOM_DEFAULT_START_Y,
+                half_width: BOTTOM_DEFAULT_HALF_WIDTH,
+                height: BOTTOM_DEFAULT_HEIGHT,
+            },
+            num_rings: NUM_RINGS,
         },
-        bottom_profile_params: LightBulbBottomProfileParams {
-            start_y: BOTTOM_DEFAULT_START_Y,
-            half_width: BOTTOM_DEFAULT_HALF_WIDTH,
-            height: BOTTOM_DEFAULT_HEIGHT,
-        },
-        num_rings: NUM_RINGS,
-    })
+        model_matrix,
+    )
     .unwrap()
 }
 

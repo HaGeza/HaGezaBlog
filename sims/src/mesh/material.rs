@@ -296,11 +296,8 @@ void main() {{
 
 /// Draw transparent mesh
 ///
-/// # Safety
-///
-/// - The function is unsafe due to using GL directly.
-/// - It should be removed after https://github.com/not-fl3/miniquad/issues/670 is fixed
-pub unsafe fn draw_transparent_mesh(mesh: &Mesh) {
+/// This should be removed after https://github.com/not-fl3/miniquad/issues/670 is fixed
+pub fn draw_transparent_mesh(mesh: &Mesh) {
     unsafe {
         get_internal_gl().flush();
         gl::glDepthMask(GL_FALSE as u8);
