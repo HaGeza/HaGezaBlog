@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, path::Path};
 
 use macroquad::math::{Vec2, Vec3, vec2, vec3};
 use serde::{Deserialize, Deserializer, de::DeserializeOwned};
@@ -12,7 +12,7 @@ pub enum ConfigLoadError {
     TomlError(#[from] toml::de::Error),
 }
 
-pub fn load_config<D>(config_path: &str) -> Result<D, ConfigLoadError>
+pub fn load_config<D>(config_path: &Path) -> Result<D, ConfigLoadError>
 where
     D: DeserializeOwned,
 {

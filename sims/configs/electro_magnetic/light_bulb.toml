@@ -1,9 +1,15 @@
 position = { x = 0.0, y = 0.0, z = -5.0 }
-
 point_light_color = { x = 0.8, y = 0.6, z = 0.2 }
 
-# Head
+# Top
 head_num_sections = 20
-head_radius = 2.0,
+neck_num_sections = 4
+num_rings = 24
+head_radius = 2.0
 head_radians = 2.3561944902 # 3/4 PI
 top_alpha = 0.4
+
+# Bottom
+bottom_start_y = -3.3
+bottom_half_width = 0.8
+bottom_height = 0.8
