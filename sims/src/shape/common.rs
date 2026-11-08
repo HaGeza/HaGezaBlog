@@ -7,19 +7,35 @@ use macroquad::math::{Vec2, vec2};
 
 use crate::util::linalg::det_2d;
 
-fn _into_circle(radian: f32) -> f32 {
+pub fn into_circle(radian: f32) -> f32 {
     (radian + PI) % (2. * PI) - PI
 }
 
+/**
+ * Get points on a semicircle centered at (0, 0) in counter-clockwise order.
+ */
 pub fn get_semicircle(radius: f32, start_radian: f32, end_radian: f32, num_sections: usize) -> Vec<Vec2> {
-    let start_radian = _into_circle(start_radian);
-    let end_radian = _into_circle(end_radian);
+    let start_radian = into_circle(start_radian);
+    let end_radian = into_circle(end_radian);
     let end_radian = end_radian + if start_radian >= end_radian { 2. * PI } else { 0. };
     let ns = num_sections as f32;
     (0..=num_sections)
         .map(|i| (i as f32 / ns) * end_radian + ((num_sections - i) as f32 / ns) * start_radian)
         .map(|theta| vec2(theta.cos(), theta.sin()).mul(radius))
         .collect()
+}
+
+/**
+ * Get the corners of a rectangle with `dims.x` width and `dims.y` height, centered around (0, 0) in
+ * counter-clockwise orcer.
+ */
+pub fn get_rectangle(dims: &Vec2) -> [Vec2; 4] {
+    [
+        vec2(dims.x / 2., dims.y / 2.),
+        vec2(-dims.x / 2., dims.y / 2.),
+        vec2(-dims.x / 2., -dims.y / 2.),
+        vec2(dims.x / 2., -dims.y / 2.),
+    ]
 }
 
 /**

@@ -1,4 +1,4 @@
-use macroquad::{math::Vec3, models::Mesh};
+use macroquad::math::Vec3;
 
 use crate::vec3_relative_eq;
 
@@ -7,20 +7,6 @@ pub(super) fn is_non_empty_triangle(positions: &[Vec3; 3]) -> bool {
     !vec3_relative_eq!(positions[0], positions[1])
         && !vec3_relative_eq!(positions[0], positions[2])
         && !vec3_relative_eq!(positions[1], positions[2])
-}
-
-#[allow(dead_code)]
-fn combine_meshes(mesh_a: &Mesh, mesh_b: &Mesh) -> Mesh {
-    Mesh {
-        vertices: mesh_a.vertices.iter().chain(mesh_b.vertices.iter()).cloned().collect(),
-        indices: mesh_a
-            .indices
-            .iter()
-            .cloned()
-            .chain(mesh_b.indices.iter().map(|i| i + mesh_a.vertices.len() as u16))
-            .collect(),
-        texture: None,
-    }
 }
 
 #[cfg(test)]
