@@ -1,6 +1,5 @@
 use std::{
     f32::consts::{FRAC_PI_2, PI},
-    ops::Mul,
     path::Path,
 };
 
@@ -15,7 +14,10 @@ use serde::Deserialize;
 use thiserror::Error;
 
 use crate::{
-    mesh::material::{FragFeature, MaterialBuilderError, draw_transparent_mesh},
+    mesh::{
+        frag_feature::{FragFeature, FragFeatures},
+        material::{MaterialBuilderError, draw_transparent_mesh},
+    },
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
@@ -123,7 +125,7 @@ pub struct LightBulb {
 }
 
 impl LightBulb {
-    fn new(params: LightBulbParams, model_matrix: Mat4) -> Result<Self, LightBulbError> {
+    fn new(params: LightBulbParams, model_matrix: Mat4, scene_frags: &FragFeatures) -> Result<Self, LightBulbError> {
         let bottom_profile = Self::create_bottom_profile(&params.bottom_profile_params)?;
         let top_outer_profile = Self::create_top_outer_profile(&params.top_profile_params, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
@@ -131,15 +133,8 @@ impl LightBulb {
         let point_light_y =
             top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
         let point_light_pos = model_matrix.transform_point3(vec3(0., point_light_y, 0.));
-
-        let mut builder = MaterialBuilder::new();
-        builder.add_frag_features(&[
-            FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
-            FragFeature::PointLight {
-                position: vec3(0., point_light_y, 0.),
-                color: params.top_profile_params.point_light_color,
-            },
-        ])?;
+        let point_light =
+            FragFeature::PointLight { position: point_light_pos, color: params.top_profile_params.point_light_color };
 
         let top_color = &Color::new(1., 1., 1., params.top_profile_params.alpha);
         let bottom_color = &color::RED;
@@ -148,44 +143,26 @@ impl LightBulb {
             bottom: create_lathe_mesh(&bottom_profile, params.num_rings, bottom_color, false),
             top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
             top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
-            materials: Self::get_materials(point_light_pos, params.top_profile_params.alpha)?,
+            materials: Self::get_materials(point_light, params.top_profile_params.alpha, scene_frags)?,
             model_matrix,
         })
     }
 
-    fn get_materials(point_light_pos: Vec3, top_alpha: f32) -> Result<LightBulbMaterials, MaterialBuilderError> {
-        let (light_direciton, directional_light_color) = (vec3(1., 1., 0.), vec3(0.1, 0.1, 0.1));
-
+    fn get_materials(
+        point_light: FragFeature,
+        top_alpha: f32,
+        scene_frags: &FragFeatures,
+    ) -> Result<LightBulbMaterials, MaterialBuilderError> {
         let mut builder = MaterialBuilder::new();
-        builder
-            .add_frag_features(&[FragFeature::PointLight { position: point_light_pos, color: vec3(0.8, 0.6, 0.2) }])?;
+        builder.add_frag_feature(&point_light)?;
 
         Ok(LightBulbMaterials {
-            bottom: builder
-                .clone()
-                .add_frag_features(&[
-                    FragFeature::DirectionalLight { direction: light_direciton, color: directional_light_color },
-                    FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
-                ])?
-                .build()?,
-            top_outer: builder
-                .clone()
-                .set_transparency(true)
-                .add_frag_features(&[
-                    FragFeature::DirectionalLight { direction: light_direciton, color: directional_light_color },
-                    FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
-                ])?
-                .build()?,
+            bottom: builder.clone().add_frag_features(scene_frags.get_frags())?.build()?,
+            top_outer: builder.clone().set_transparency(true).add_frag_features(scene_frags.get_frags())?.build()?,
             top_inner: builder
                 .clone()
                 .set_transparency(true)
-                .add_frag_features(&[
-                    FragFeature::DirectionalLight {
-                        direction: light_direciton,
-                        color: directional_light_color * (1. - top_alpha),
-                    },
-                    FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1).mul(1. - top_alpha)),
-                ])?
+                .add_frag_features(scene_frags.scale_lights(1. - top_alpha).get_frags())?
                 .build()?,
         })
     }
@@ -264,7 +241,7 @@ impl LightBulb {
         Ok(LatheProfile::new(&points)?)
     }
 
-    pub fn from_config(config_path: &Path) -> Result<LightBulb, LightBulbError> {
+    pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightBulb, LightBulbError> {
         let config: LightBulbConfig = load_config(config_path)?;
 
         LightBulb::new(
@@ -285,6 +262,7 @@ impl LightBulb {
                 num_rings: config.num_rings,
             },
             Mat4::from_translation(config.position),
+            scene_frags,
         )
     }
 }

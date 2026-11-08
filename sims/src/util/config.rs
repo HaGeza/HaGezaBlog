@@ -23,27 +23,14 @@ pub fn deserialize_vec2<'de, D>(deserializer: D) -> Result<Vec2, D::Error>
 where
     D: Deserializer<'de>,
 {
-    #[derive(Deserialize)]
-    struct Vec2Components {
-        x: f32,
-        y: f32,
-    }
-
-    let components = Vec2Components::deserialize(deserializer)?;
-    Ok(vec2(components.x, components.y))
+    let [x, y] = <[f32; 2]>::deserialize(deserializer)?;
+    Ok(vec2(x, y))
 }
 
 pub fn deserialize_vec3<'de, D>(deserializer: D) -> Result<Vec3, D::Error>
 where
     D: Deserializer<'de>,
 {
-    #[derive(Deserialize)]
-    struct Vec3Components {
-        x: f32,
-        y: f32,
-        z: f32,
-    }
-
-    let components = Vec3Components::deserialize(deserializer)?;
-    Ok(vec3(components.x, components.y, components.z))
+    let [x, y, z] = <[f32; 3]>::deserialize(deserializer)?;
+    Ok(vec3(x, y, z))
 }

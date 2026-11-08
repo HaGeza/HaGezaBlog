@@ -11,6 +11,8 @@ use miniquad::{
 };
 use thiserror::Error;
 
+use crate::mesh::frag_feature::FragFeature;
+
 #[cfg(target_arch = "wasm32")]
 const SHADER_HEADER: &str = "#version 300 es\n";
 
@@ -92,12 +94,6 @@ impl FragOutput {
     }
 }
 
-pub enum FragFeature {
-    AmbientLight(Vec3),
-    DirectionalLight { direction: Vec3, color: Vec3 },
-    PointLight { position: Vec3, color: Vec3 },
-}
-
 #[derive(Clone)]
 enum UniformWithValue {
     Float3(Vec3),
@@ -170,9 +166,9 @@ impl MaterialBuilder {
         self
     }
 
-    fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
+    pub fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
         match frag_feature {
-            FragFeature::AmbientLight(color) => {
+            FragFeature::AmbientLight { value: color } => {
                 self.vert_outputs.insert(VertOutput::Color);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 

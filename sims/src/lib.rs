@@ -1,6 +1,9 @@
-pub mod camera_w_controls;
+pub mod three_d {
+    pub mod camera_w_controls;
+}
 pub mod mesh {
     pub mod common;
+    pub mod frag_feature;
     pub(in crate::mesh) mod lathe_mesh;
     pub mod material;
     pub mod models {
