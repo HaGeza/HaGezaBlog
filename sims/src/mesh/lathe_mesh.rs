@@ -1,8 +1,7 @@
 //! Module for creating Lathe Meshes, see: https://en.wikipedia.org/wiki/Lathe_(graphics) for example
 
-use crate::shape::lathe_profile::LatheProfile;
+use crate::{mesh::common::add_face, shape::lathe_profile::LatheProfile};
 
-use super::common::is_non_empty_triangle;
 use std::f32::consts::PI;
 
 use macroquad::{
@@ -13,7 +12,7 @@ use macroquad::{
 };
 
 /** Return the vertices of the lathe mesh created  */
-fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color, reverse_faces: bool) -> Vec<Vertex> {
+fn create_vertices(profile: &LatheProfile, num_rings: usize, color: &Color, reverse_faces: bool) -> Vec<Vertex> {
     let mut vertices = vec![];
 
     for ring in 0..num_rings {
@@ -28,25 +27,7 @@ fn create_lathe_vertices(profile: &LatheProfile, num_rings: usize, color: &Color
     vertices
 }
 
-fn add_face(vertices: &[Vertex], indices: &mut Vec<u16>, mut face_indices: [u16; 3], reverse_faces: bool) {
-    if is_non_empty_triangle(&[
-        vertices[face_indices[0] as usize].position,
-        vertices[face_indices[1] as usize].position,
-        vertices[face_indices[2] as usize].position,
-    ]) {
-        if reverse_faces {
-            face_indices.reverse();
-        }
-        indices.extend(face_indices);
-    }
-}
-
-fn create_lathe_indices(
-    profile: &LatheProfile,
-    num_rings: usize,
-    vertices: &[Vertex],
-    reverse_faces: bool,
-) -> Vec<u16> {
+fn create_indices(profile: &LatheProfile, num_rings: usize, vertices: &[Vertex], reverse_faces: bool) -> Vec<u16> {
     let mut indices = vec![];
     for ring in 0..num_rings {
         for pt_ind in 0..profile.len() - 1 {
@@ -71,8 +52,8 @@ fn create_lathe_indices(
  * The `profile` points are assumed to be counterclockwise ordered.
  */
 pub fn create_lathe_mesh(profile: &LatheProfile, num_rings: usize, color: &Color, reverse_faces: bool) -> Mesh {
-    let vertices = create_lathe_vertices(profile, num_rings, color, reverse_faces);
-    let indices = create_lathe_indices(profile, num_rings, &vertices, reverse_faces);
+    let vertices = create_vertices(profile, num_rings, color, reverse_faces);
+    let indices = create_indices(profile, num_rings, &vertices, reverse_faces);
     Mesh { vertices, indices, texture: None }
 }
 
@@ -89,17 +70,17 @@ mod tests {
     fn test_create_lathe_vertices_creates_correct_number_of_vertices() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
-        assert_eq!(create_lathe_vertices(&profile, 2, &color::WHITE, false).len(), 6);
-        assert_eq!(create_lathe_vertices(&profile, 3, &color::WHITE, false).len(), 9);
-        assert_eq!(create_lathe_vertices(&profile, 4, &color::WHITE, false).len(), 12);
-        assert_eq!(create_lathe_vertices(&profile, 20, &color::WHITE, false).len(), 60);
+        assert_eq!(create_vertices(&profile, 2, &color::WHITE, false).len(), 6);
+        assert_eq!(create_vertices(&profile, 3, &color::WHITE, false).len(), 9);
+        assert_eq!(create_vertices(&profile, 4, &color::WHITE, false).len(), 12);
+        assert_eq!(create_vertices(&profile, 20, &color::WHITE, false).len(), 60);
     }
 
     #[test]
     fn test_create_lathe_vertices_creates_vertices_in_correct_positions() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
 
-        let vertices = create_lathe_vertices(&profile, 4, &color::WHITE, false);
+        let vertices = create_vertices(&profile, 4, &color::WHITE, false);
         // ring 0
         assert_vec3_relative_eq!(vertices[0].position, vec3(1., 1., 0.));
         assert_vec3_relative_eq!(vertices[1].position, vec3(0., 0.5, 0.));
@@ -121,7 +102,7 @@ mod tests {
     #[test]
     fn test_create_lathe_vertices_creates_no_vertices_with_zero_rings() {
         let profile = LatheProfile::new(&[vec2(1., 1.), vec2(0., 0.5), vec2(0.5, 0.)]).unwrap();
-        assert_eq!(create_lathe_vertices(&profile, 0, &color::WHITE, false).len(), 0);
+        assert_eq!(create_vertices(&profile, 0, &color::WHITE, false).len(), 0);
     }
 
     #[test]
@@ -141,7 +122,7 @@ mod tests {
         .map(|p| Vertex { position: *p, uv: Vec2::ZERO, color: color::WHITE.into(), normal: Vec4::ZERO })
         .collect();
 
-        let indices = create_lathe_indices(&profile, 4, &vertices, false);
+        let indices = create_indices(&profile, 4, &vertices, false);
 
         assert_eq!(indices.len(), 4 * 2 * 3); // 4 faces, 2 triangles each, 3 points each
         assert_eq!(
@@ -180,7 +161,7 @@ mod tests {
         .map(|p| Vertex { position: *p, uv: Vec2::ZERO, color: color::WHITE.into(), normal: Vec4::ZERO })
         .collect();
 
-        let indices = create_lathe_indices(&profile, 4, &vertices, false);
+        let indices = create_indices(&profile, 4, &vertices, false);
 
         assert_eq!(indices.len(), 8 * 3); // 8 faces, 3 points each
 

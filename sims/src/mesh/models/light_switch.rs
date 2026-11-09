@@ -1,6 +1,9 @@
 use std::{f32::consts::FRAC_PI_2, ops::Add, path::Path};
 
-use macroquad::math::{Mat4, Vec2, Vec3, vec2};
+use macroquad::{
+    color::Color,
+    math::{Mat4, Vec2, Vec3, vec2},
+};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -89,12 +92,14 @@ impl LightSwitch {
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(scene_frags.get_frags())?;
 
+        // TODO: move color to config
         Ok(LightSwitch {
             frame: MeshWMaterial::basic(
                 extrude_profile(
                     &Self::create_frame_profile(&params.frame_params)?,
                     &XZ_PLANE,
                     params.frame_params.height,
+                    &Color::new(0.8, 0.8, 0.8, 1.0),
                 ),
                 builder.build()?,
             ),
@@ -103,6 +108,7 @@ impl LightSwitch {
                     &Self::create_toggle_profile(&params.toggle_params)?,
                     &YZ_PLANE,
                     params.toggle_params.thickness,
+                    &Color::new(0.6, 0.6, 0.6, 1.0),
                 ),
                 builder.build()?,
             ),

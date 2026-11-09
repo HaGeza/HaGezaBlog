@@ -127,6 +127,7 @@ impl LightBulb {
         let point_light =
             FragFeature::PointLight { position: point_light_pos, color: params.top_params.point_light_color };
 
+        // TODO: move color to config
         let top_color = &Color::new(1., 1., 1., params.top_params.alpha);
         let bottom_color = &color::RED;
 
