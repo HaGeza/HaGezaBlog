@@ -2,7 +2,7 @@ use std::{f32::consts::FRAC_PI_2, ops::Add, path::Path};
 
 use macroquad::{
     color::Color,
-    math::{Mat4, Vec2, Vec3, vec2},
+    math::{Mat4, Vec2, Vec3, vec2, vec3},
 };
 use serde::Deserialize;
 use thiserror::Error;
@@ -12,50 +12,44 @@ use crate::{
         extrusion_mesh::extrude_profile,
         frag_feature::FragFeatures,
         material::{MaterialBuilder, MaterialBuilderError},
-        models::model::MeshWMaterial,
-        plane::{XZ_PLANE, YZ_PLANE},
+        models::model::{MeshWMaterial, draw_model},
+        plane::{Plane, XZ_PLANE},
     },
     shape::{
         common::{get_rectangle, get_semicircle, into_circle},
         profile::Profile,
     },
-    util::config::{ConfigLoadError, deserialize_vec2, deserialize_vec3, load_config},
+    util::config::{ConfigLoadError, deserialize_color, deserialize_vec2, deserialize_vec3, load_config},
 };
 
+#[derive(Deserialize)]
 struct LightSwitchFrameParams {
+    #[serde(deserialize_with = "deserialize_vec2")]
     frame_dims: Vec2,
+    #[serde(deserialize_with = "deserialize_vec2")]
     hole_dims: Vec2,
     height: f32,
+    #[serde(deserialize_with = "deserialize_color")]
+    color: Color,
 }
 
+#[derive(Deserialize)]
 struct LightSwitchToggleParams {
     base_radians: f32,
     base_radius: f32,
     base_num_sections: usize,
     tip_length: f32,
     thickness: f32,
+    #[serde(deserialize_with = "deserialize_color")]
+    color: Color,
 }
 
-struct LightSwitchParams {
-    frame_params: LightSwitchFrameParams,
-    toggle_params: LightSwitchToggleParams,
-}
-
-// TODO: merge with LightSwitchParams
 #[derive(Deserialize)]
-struct LightSwitchConfig {
+struct LightSwitchParams {
     #[serde(deserialize_with = "deserialize_vec3")]
     position: Vec3,
-    #[serde(deserialize_with = "deserialize_vec2")]
-    frame_dims: Vec2,
-    #[serde(deserialize_with = "deserialize_vec2")]
-    frame_hole_dims: Vec2,
-    frame_height: f32,
-    toggle_base_radians: f32,
-    toggle_base_radius: f32,
-    toggle_base_num_sections: usize,
-    toggle_tip_length: f32,
-    toggle_thickness: f32,
+    frame: LightSwitchFrameParams,
+    toggle: LightSwitchToggleParams,
 }
 
 #[derive(Error, Debug)]
@@ -85,11 +79,7 @@ pub struct LightSwitch {
 }
 
 impl LightSwitch {
-    fn new(
-        params: LightSwitchParams,
-        model_matrix: Mat4,
-        scene_frags: &FragFeatures,
-    ) -> Result<LightSwitch, LightSwitchError> {
+    fn new(params: LightSwitchParams, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(scene_frags.get_frags())?;
 
@@ -97,23 +87,23 @@ impl LightSwitch {
         Ok(LightSwitch {
             frame: MeshWMaterial::basic(
                 extrude_profile(
-                    &Self::create_frame_profile(&params.frame_params)?,
+                    &Self::create_frame_profile(&params.frame)?,
                     &XZ_PLANE,
-                    params.frame_params.height,
-                    &Color::new(0.8, 0.8, 0.8, 1.0),
+                    params.frame.height,
+                    &params.frame.color,
                 ),
                 builder.build()?,
             ),
             toggle: MeshWMaterial::basic(
                 extrude_profile(
-                    &Self::create_toggle_profile(&params.toggle_params)?,
-                    &YZ_PLANE,
-                    params.toggle_params.thickness,
-                    &Color::new(0.6, 0.6, 0.6, 1.0),
+                    &Self::create_toggle_profile(&params.toggle)?,
+                    &Plane::new(vec3(-params.toggle.thickness / 2., 0., 0.), Vec3::X),
+                    params.toggle.thickness,
+                    &params.toggle.color,
                 ),
                 builder.build()?,
             ),
-            model_matrix,
+            model_matrix: Mat4::from_translation(params.position),
         })
     }
 
@@ -150,25 +140,10 @@ impl LightSwitch {
     }
 
     pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {
-        let config: LightSwitchConfig = load_config(config_path)?;
+        LightSwitch::new(load_config(config_path)?, scene_frags)
+    }
 
-        LightSwitch::new(
-            LightSwitchParams {
-                frame_params: LightSwitchFrameParams {
-                    frame_dims: config.frame_dims,
-                    hole_dims: config.frame_hole_dims,
-                    height: config.frame_height,
-                },
-                toggle_params: LightSwitchToggleParams {
-                    base_radians: config.toggle_base_radians,
-                    base_radius: config.toggle_base_radius,
-                    base_num_sections: config.toggle_base_num_sections,
-                    tip_length: config.toggle_tip_length,
-                    thickness: config.toggle_thickness,
-                },
-            },
-            Mat4::from_translation(config.position),
-            scene_frags,
-        )
+    pub fn draw(&self) {
+        draw_model(&[&self.frame, &self.toggle], &self.model_matrix)
     }
 }

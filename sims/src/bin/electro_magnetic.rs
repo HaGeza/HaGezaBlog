@@ -22,11 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let scene_frags = FragFeatures::from_config(config_base.join("scene.toml").as_path())?;
 
     let lightbulb = LightBulb::from_config(config_base.join("light_bulb.toml").as_path(), &scene_frags)?;
-    let light_switch = LightSwitch::from_config(config_base.join("light_switch").as_path(), &scene_frags);
+    let light_switch = LightSwitch::from_config(config_base.join("light_switch.toml").as_path(), &scene_frags)?;
     // wire_loop = create_wire_loop_mesh(positions);
 
     loop {
         lightbulb.draw();
+        light_switch.draw();
 
         camera.update(false);
 

@@ -1,6 +1,9 @@
 use std::{io, path::Path};
 
-use macroquad::math::{Vec2, Vec3, vec2, vec3};
+use macroquad::{
+    color::Color,
+    math::{Vec2, Vec3, vec2, vec3, vec4},
+};
 use serde::{Deserialize, Deserializer, de::DeserializeOwned};
 use thiserror::Error;
 
@@ -33,4 +36,12 @@ where
 {
     let [x, y, z] = <[f32; 3]>::deserialize(deserializer)?;
     Ok(vec3(x, y, z))
+}
+
+pub fn deserialize_color<'de, D>(deserializer: D) -> Result<Color, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let [x, y, z, w] = <[f32; 4]>::deserialize(deserializer)?;
+    Ok(Color::new(x, y, z, w))
 }

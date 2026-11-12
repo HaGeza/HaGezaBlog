@@ -23,6 +23,6 @@ impl Plane {
     }
 }
 
-pub const XY_PLANE: Plane = Plane { origin: Vec3::ZERO, normal: Vec3::Z, basis: [Vec3::X, Vec3::Y] };
+// pub const XY_PLANE: Plane = Plane { origin: Vec3::ZERO, normal: Vec3::Z, basis: [Vec3::X, Vec3::Y] };
 pub const XZ_PLANE: Plane = Plane { origin: Vec3::ZERO, normal: Vec3::Y, basis: [Vec3::X, Vec3::Z] };
-pub const YZ_PLANE: Plane = Plane { origin: Vec3::ZERO, normal: Vec3::X, basis: [Vec3::Y, Vec3::Z] };
+// pub const YZ_PLANE: Plane = Plane { origin: Vec3::ZERO, normal: Vec3::X, basis: [Vec3::Y, Vec3::Z] };
