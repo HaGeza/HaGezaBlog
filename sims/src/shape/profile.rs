@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use macroquad::math::Vec2;
 
 pub struct Profile {
@@ -28,5 +30,24 @@ impl Profile {
 
     pub fn num_pts(&self) -> usize {
         self.outline.len() + self.holes.iter().fold(0, |acc, hole| acc + hole.len())
+    }
+}
+
+impl Index<usize> for Profile {
+    type Output = Vec2;
+
+    fn index(&self, ind: usize) -> &Vec2 {
+        if ind < self.outline.len() {
+            return &self.outline[ind];
+        } else {
+            let mut hole_ind = ind - self.outline.len();
+            for hole in &self.holes {
+                if hole_ind < hole.len() {
+                    return &hole[hole_ind];
+                }
+                hole_ind -= hole.len();
+            }
+        }
+        panic!("index {ind} out of bounds for profile of size {}", self.num_pts());
     }
 }

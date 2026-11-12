@@ -1,6 +1,9 @@
 //! Module for creating Lathe Meshes, see: https://en.wikipedia.org/wiki/Lathe_(graphics) for example
 
-use crate::{mesh::common::add_face, shape::lathe_profile::LatheProfile};
+use crate::{
+    mesh::common::{RectangleFaceCorners, add_rectangle_face},
+    shape::lathe_profile::LatheProfile,
+};
 
 use std::f32::consts::PI;
 
@@ -31,17 +34,14 @@ fn create_indices(profile: &LatheProfile, num_rings: usize, vertices: &[Vertex],
     let mut indices = vec![];
     for ring in 0..num_rings {
         for pt_ind in 0..profile.len() - 1 {
-            let bot_left = ring * profile.len() + pt_ind;
-            let top_left = ring * profile.len() + pt_ind + 1;
-
             let next_ring = (ring + 1) % num_rings;
-            let bot_right = next_ring * profile.len() + pt_ind;
-            let top_right = next_ring * profile.len() + pt_ind + 1;
-
-            // Add non-empty new faces in clockwise vertex order (for some reason, even though
-            // the pipeline is supposed to use clounterclockwise order):
-            add_face(vertices, &mut indices, [bot_right as u16, bot_left as u16, top_left as u16], reverse_faces);
-            add_face(vertices, &mut indices, [top_right as u16, bot_right as u16, top_left as u16], reverse_faces);
+            let corners = RectangleFaceCorners {
+                bot_left: (ring * profile.len() + pt_ind) as u16,
+                top_left: (ring * profile.len() + pt_ind + 1) as u16,
+                bot_right: (next_ring * profile.len() + pt_ind) as u16,
+                top_right: (next_ring * profile.len() + pt_ind + 1) as u16,
+            };
+            add_rectangle_face(vertices, &mut indices, corners, reverse_faces);
         }
     }
     indices

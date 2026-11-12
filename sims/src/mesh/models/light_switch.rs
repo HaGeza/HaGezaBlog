@@ -41,6 +41,7 @@ struct LightSwitchParams {
     toggle_params: LightSwitchToggleParams,
 }
 
+// TODO: merge with LightSwitchParams
 #[derive(Deserialize)]
 struct LightSwitchConfig {
     #[serde(deserialize_with = "deserialize_vec3")]

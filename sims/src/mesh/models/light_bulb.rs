@@ -81,6 +81,7 @@ struct LightBulbParams {
     num_rings: usize,
 }
 
+// TODO: merge with LightBulbParams
 #[derive(Deserialize)]
 struct LightBulbConfig {
     #[serde(deserialize_with = "deserialize_vec3")]

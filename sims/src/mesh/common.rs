@@ -22,6 +22,25 @@ pub(super) fn add_face(vertices: &[Vertex], indices: &mut Vec<u16>, mut face_ind
     }
 }
 
+pub(super) struct RectangleFaceCorners {
+    pub bot_left: u16,
+    pub top_left: u16,
+    pub bot_right: u16,
+    pub top_right: u16,
+}
+
+pub(super) fn add_rectangle_face(
+    vertices: &[Vertex],
+    indices: &mut Vec<u16>,
+    corners: RectangleFaceCorners,
+    reverse_faces: bool,
+) {
+    // Add non-empty new faces in clockwise vertex order (for some reason, even though
+    // the pipeline is supposed to use clounterclockwise order):
+    add_face(vertices, indices, [corners.bot_right, corners.bot_left, corners.top_left], reverse_faces);
+    add_face(vertices, indices, [corners.top_right, corners.bot_right, corners.top_left], reverse_faces);
+}
+
 #[cfg(test)]
 mod tests {
     use macroquad::math::vec3;
