@@ -7,7 +7,7 @@ use macroquad::math::{Vec2, vec2};
 
 use crate::util::linalg::det_2d;
 
-pub fn into_circle(radian: f32) -> f32 {
+fn into_circle(radian: f32) -> f32 {
     (radian + PI) % (2. * PI) - PI
 }
 

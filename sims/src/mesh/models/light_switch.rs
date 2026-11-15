@@ -13,10 +13,10 @@ use crate::{
         frag_feature::FragFeatures,
         material::{MaterialBuilder, MaterialBuilderError},
         models::model::{MeshWMaterial, draw_model},
-        plane::{Plane, XZ_PLANE},
+        plane::Plane,
     },
     shape::{
-        common::{get_rectangle, get_semicircle, into_circle},
+        common::{get_rectangle, get_semicircle},
         profile::Profile,
     },
     util::config::{ConfigLoadError, deserialize_color, deserialize_vec2, deserialize_vec3, load_config},
@@ -83,12 +83,11 @@ impl LightSwitch {
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(scene_frags.get_frags())?;
 
-        // TODO: move color to config
         Ok(LightSwitch {
             frame: MeshWMaterial::basic(
                 extrude_profile(
                     &Self::create_frame_profile(&params.frame)?,
-                    &XZ_PLANE,
+                    &Plane::from_basis(vec3(0., -params.frame.height, 0.), [Vec3::X, -Vec3::Z]),
                     params.frame.height,
                     &params.frame.color,
                 ),
@@ -97,7 +96,7 @@ impl LightSwitch {
             toggle: MeshWMaterial::basic(
                 extrude_profile(
                     &Self::create_toggle_profile(&params.toggle)?,
-                    &Plane::new(vec3(-params.toggle.thickness / 2., 0., 0.), Vec3::X),
+                    &Plane::from_normal(vec3(-params.toggle.thickness / 2., 0., 0.), Vec3::X),
                     params.toggle.thickness,
                     &params.toggle.color,
                 ),
@@ -128,7 +127,7 @@ impl LightSwitch {
         if params.base_radians <= 0. || params.base_radius <= 0. || params.tip_length <= 0. {
             Err(LightSwitchProfileError::NonPositiveToggleAttrs)
         } else {
-            let theta = into_circle(params.base_radians) / 2.;
+            let theta = params.base_radians / 2.;
             let base =
                 get_semicircle(params.base_radius, 3. * FRAC_PI_2 - theta, theta - FRAC_PI_2, params.base_num_sections);
 
