@@ -90,15 +90,17 @@ impl LightSwitch {
                     &Plane::from_basis(vec3(0., -params.frame.height, 0.), [Vec3::X, -Vec3::Z]),
                     params.frame.height,
                     &params.frame.color,
+                    false,
                 ),
                 builder.build()?,
             ),
             toggle: MeshWMaterial::basic(
                 extrude_profile(
                     &Self::create_toggle_profile(&params.toggle)?,
-                    &Plane::from_normal(vec3(-params.toggle.thickness / 2., 0., 0.), Vec3::X),
+                    &Plane::from_basis(vec3(params.toggle.thickness / 2., 0., 0.), [Vec3::Z, Vec3::Y]),
                     params.toggle.thickness,
                     &params.toggle.color,
+                    true,
                 ),
                 builder.build()?,
             ),

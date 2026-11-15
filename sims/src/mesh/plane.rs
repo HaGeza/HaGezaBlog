@@ -10,7 +10,7 @@ impl Plane {
     pub fn from_normal(origin: Vec3, normal: Vec3) -> Self {
         let normal = normal.normalize();
         let basis_u = normal.cross(if normal.y.abs() < 0.99 { Vec3::Y } else { Vec3::X }).normalize();
-        let basis_v = basis_u.cross(normal).normalize();
+        let basis_v = normal.cross(basis_u).normalize();
         Self { origin, normal, basis: [basis_u, basis_v] }
     }
 

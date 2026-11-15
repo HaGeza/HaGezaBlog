@@ -1,7 +1,7 @@
 use earcut::Earcut;
 use macroquad::{
     color::Color,
-    math::{Vec2, Vec4},
+    math::{Vec2, Vec3},
     models::Mesh,
     ui::Vertex,
 };
@@ -30,20 +30,48 @@ fn get_mesh_ind(profile_ind: usize, is_extrusion: bool, vertex_side: VertexSide)
         }
 }
 
-fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Color) -> Vec<Vertex> {
+fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Color, smooth_sides: bool) -> Vec<Vertex> {
     let offset = *plane.normal() * thickness;
-    let positions = profile.iter_pts().flat_map(|pt| {
-        let position = plane.project_2d(pt);
-        [position, position + offset]
-    });
+    let positions: Vec<Vec3> = profile
+        .iter_pts()
+        .flat_map(|pt| {
+            let position = plane.project_2d(pt);
+            [position, position + offset]
+        })
+        .collect();
+    let n = positions.len();
 
     // TODO: calculate the normals of the faces at each vertex
     positions
-        .flat_map(|position| {
+        .iter()
+        .enumerate()
+        .flat_map(|(i, &position)| {
+            let is_extrusion = i % 2 != 0;
+            let is_hole = i >= profile.outline().len() * 2;
+
+            let (prev, next, opposite) = (
+                positions[(n + i - 2) % n] - position,
+                positions[(i + 2) % n] - position,
+                positions[if is_extrusion { i - 1 } else { i + 1 }] - position,
+            );
+
+            let mut prev_normal =
+                (if is_hole ^ is_extrusion { prev.cross(opposite) } else { opposite.cross(prev) }).normalize();
+            let mut next_normal =
+                (if is_hole ^ is_extrusion { opposite.cross(next) } else { next.cross(opposite) }).normalize();
+            if smooth_sides {
+                prev_normal = (prev_normal + next_normal) / 2.;
+                next_normal = prev_normal;
+            }
             [
-                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: Vec4::ZERO }, // previous side
-                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: Vec4::ZERO }, // next side
-                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: Vec4::ZERO }, // top/bottom
+                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: prev_normal.extend(0.) }, // previous side
+                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: next_normal.extend(0.) }, // next side
+                Vertex {
+                    position,
+                    uv: Vec2::ZERO,
+                    color: (*color).into(),
+                    normal: (if is_extrusion { next.cross(prev) } else { prev.cross(next) }).normalize().extend(0.),
+                }, // top/bottom
             ]
         })
         .collect()
@@ -98,8 +126,8 @@ fn add_base_indices(profile: &Profile, vertices: &[Vertex], indices: &mut Vec<u1
         let (a, b, c) = (profile[triangle[0]], profile[triangle[1]], profile[triangle[2]]);
         let is_counterclockwise = (b - a).perp_dot(c - a) > 0.0;
         let triangle = [triangle[0], triangle[1], triangle[2]];
-        add_face(vertices, indices, triangle.map(|i| get_mesh_ind(i, false, VertexSide::Base)), !is_counterclockwise);
-        add_face(vertices, indices, triangle.map(|i| get_mesh_ind(i, true, VertexSide::Base)), is_counterclockwise);
+        add_face(vertices, indices, triangle.map(|i| get_mesh_ind(i, false, VertexSide::Base)), is_counterclockwise);
+        add_face(vertices, indices, triangle.map(|i| get_mesh_ind(i, true, VertexSide::Base)), !is_counterclockwise);
     }
 }
 
@@ -110,8 +138,8 @@ fn create_indices(profile: &Profile, vertices: &[Vertex]) -> Vec<u16> {
     indices
 }
 
-pub fn extrude_profile(profile: &Profile, plane: &Plane, thickness: f32, color: &Color) -> Mesh {
-    let vertices = create_vertices(profile, plane, thickness, color);
+pub fn extrude_profile(profile: &Profile, plane: &Plane, thickness: f32, color: &Color, smooth_sides: bool) -> Mesh {
+    let vertices = create_vertices(profile, plane, thickness, color, smooth_sides);
     let indices = create_indices(profile, &vertices);
     Mesh { vertices, indices, texture: None }
 }

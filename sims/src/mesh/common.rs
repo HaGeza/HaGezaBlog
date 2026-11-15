@@ -35,10 +35,9 @@ pub(super) fn add_rectangle_face(
     corners: RectangleFaceCorners,
     reverse_faces: bool,
 ) {
-    // Add non-empty new faces in clockwise vertex order (for some reason, even though
-    // the pipeline is supposed to use clounterclockwise order):
-    add_face(vertices, indices, [corners.bot_right, corners.bot_left, corners.top_left], reverse_faces);
-    add_face(vertices, indices, [corners.top_right, corners.bot_right, corners.top_left], reverse_faces);
+    // Add non-empty new faces in counterclockwise vertex order
+    add_face(vertices, indices, [corners.top_left, corners.bot_left, corners.bot_right], reverse_faces);
+    add_face(vertices, indices, [corners.top_left, corners.bot_right, corners.top_right], reverse_faces);
 }
 
 #[cfg(test)]

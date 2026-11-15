@@ -37,8 +37,9 @@ fn create_indices(profile: &LatheProfile, num_rings: usize, vertices: &[Vertex],
             let next_ring = (ring + 1) % num_rings;
             let corners = RectangleFaceCorners {
                 bot_left: (ring * profile.len() + pt_ind) as u16,
-                top_left: (ring * profile.len() + pt_ind + 1) as u16,
-                bot_right: (next_ring * profile.len() + pt_ind) as u16,
+                // TODO: understand why these should be switched
+                top_left: (next_ring * profile.len() + pt_ind) as u16,
+                bot_right: (ring * profile.len() + pt_ind + 1) as u16,
                 top_right: (next_ring * profile.len() + pt_ind + 1) as u16,
             };
             add_rectangle_face(vertices, &mut indices, corners, reverse_faces);
