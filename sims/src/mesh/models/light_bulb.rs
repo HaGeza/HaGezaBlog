@@ -104,6 +104,7 @@ pub struct LightBulb {
     bottom: MeshWMaterial,
     top_inner: MeshWMaterial,
     top_outer: MeshWMaterial,
+    point_light: FragFeature,
     model_matrix: Mat4,
 }
 
@@ -126,11 +127,11 @@ impl LightBulb {
         Ok(LightBulb {
             bottom: MeshWMaterial::basic(
                 create_lathe_mesh(&bottom_profile, params.num_rings, &params.bottom.color, false),
-                builder.clone().add_frag_features(scene_frags.get_frags())?.build()?,
+                builder.clone().add_frag_features(&scene_frags.frags)?.build()?,
             ),
             top_inner: MeshWMaterial::new(
                 create_lathe_mesh(&top_outer_profile, params.num_rings, &params.top.color, true),
-                builder.clone().set_transparency(true).add_frag_features(scene_frags.get_frags())?.build()?,
+                builder.clone().set_transparency(true).add_frag_features(&scene_frags.frags)?.build()?,
                 true,
             ),
             top_outer: MeshWMaterial::new(
@@ -138,10 +139,11 @@ impl LightBulb {
                 builder
                     .clone()
                     .set_transparency(true)
-                    .add_frag_features(scene_frags.scale_lights(1. - params.top.color.a).get_frags())?
+                    .add_frag_features(&scene_frags.scale_lights(1. - params.top.color.a).frags)?
                     .build()?,
                 true,
             ),
+            point_light,
             model_matrix,
         })
     }
@@ -205,6 +207,10 @@ impl LightBulb {
 
     pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightBulb, LightBulbError> {
         LightBulb::new(load_config(config_path)?, scene_frags)
+    }
+
+    pub fn get_point_light(&self) -> &FragFeature {
+        &self.point_light
     }
 
     pub fn draw(&self) {

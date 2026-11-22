@@ -19,9 +19,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut camera = CameraWControls::from_config(config_base.join("camera.toml").as_path())?;
     camera.update(true);
 
-    let scene_frags = FragFeatures::from_config(config_base.join("scene.toml").as_path())?;
+    let mut scene_frags = FragFeatures::from_config(config_base.join("scene.toml").as_path())?;
 
     let lightbulb = LightBulb::from_config(config_base.join("light_bulb.toml").as_path(), &scene_frags)?;
+    scene_frags.frags.push(*lightbulb.get_point_light());
+
     let light_switch = LightSwitch::from_config(config_base.join("light_switch.toml").as_path(), &scene_frags)?;
     // wire_loop = create_wire_loop_mesh(positions);
 

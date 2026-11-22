@@ -4,7 +4,7 @@ use crate::util::config::{ConfigLoadError, deserialize_vec3, load_config};
 use macroquad::math::Vec3;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FragFeature {
     AmbientLight {
@@ -27,16 +27,12 @@ pub enum FragFeature {
 
 #[derive(Debug, Deserialize)]
 pub struct FragFeatures {
-    frags: Vec<FragFeature>,
+    pub frags: Vec<FragFeature>,
 }
 
 impl FragFeatures {
     pub fn from_config(config_path: &Path) -> Result<FragFeatures, ConfigLoadError> {
         load_config(config_path)
-    }
-
-    pub fn get_frags(&self) -> &Vec<FragFeature> {
-        &self.frags
     }
 
     pub fn scale_lights(&self, scalar: f32) -> FragFeatures {
@@ -45,9 +41,7 @@ impl FragFeatures {
                 .frags
                 .iter()
                 .map(|frag| match frag {
-                    FragFeature::AmbientLight { value } => {
-                        FragFeature::AmbientLight { value: value.mul(scalar) }
-                    },
+                    FragFeature::AmbientLight { value } => FragFeature::AmbientLight { value: value.mul(scalar) },
                     FragFeature::DirectionalLight { direction, color } => {
                         FragFeature::DirectionalLight { direction: *direction, color: color.mul(scalar) }
                     },

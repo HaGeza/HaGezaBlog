@@ -1,4 +1,4 @@
-use std::{f32::consts::FRAC_PI_2, ops::Add, path::Path};
+use std::{f32::consts::FRAC_PI_2, iter, ops::Add, path::Path};
 
 use macroquad::{
     color::Color,
@@ -81,7 +81,7 @@ pub struct LightSwitch {
 impl LightSwitch {
     fn new(params: LightSwitchParams, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {
         let mut builder = MaterialBuilder::new();
-        builder.add_frag_features(scene_frags.get_frags())?;
+        builder.add_frag_features(&scene_frags.frags)?;
 
         Ok(LightSwitch {
             frame: MeshWMaterial::basic(
@@ -90,7 +90,7 @@ impl LightSwitch {
                     &Plane::from_basis(vec3(0., -params.frame.height, 0.), [Vec3::X, -Vec3::Z]),
                     params.frame.height,
                     &params.frame.color,
-                    false,
+                    None,
                 ),
                 builder.build()?,
             ),
@@ -100,7 +100,7 @@ impl LightSwitch {
                     &Plane::from_basis(vec3(params.toggle.thickness / 2., 0., 0.), [Vec3::Z, Vec3::Y]),
                     params.toggle.thickness,
                     &params.toggle.color,
-                    false,
+                    Some(Self::create_toggle_smooth_edge_map(&params.toggle)),
                 ),
                 builder.build()?,
             ),
@@ -138,6 +138,13 @@ impl LightSwitch {
 
             Ok(Profile::whole(vec![tip_left].into_iter().chain(base).chain(vec![tip_right]).collect()))
         }
+    }
+
+    fn create_toggle_smooth_edge_map(params: &LightSwitchToggleParams) -> Vec<bool> {
+        iter::repeat_n(false, 2)
+            .chain(iter::repeat_n(true, params.base_num_sections - 1))
+            .chain(iter::repeat_n(false, 2))
+            .collect()
     }
 
     pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {

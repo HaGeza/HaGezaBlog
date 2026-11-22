@@ -2,7 +2,7 @@ use std::{io, path::Path};
 
 use macroquad::{
     color::Color,
-    math::{Vec2, Vec3, vec2, vec3, vec4},
+    math::{Vec2, Vec3, vec2, vec3},
 };
 use serde::{Deserialize, Deserializer, de::DeserializeOwned};
 use thiserror::Error;

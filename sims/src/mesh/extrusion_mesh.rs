@@ -32,7 +32,13 @@ fn get_mesh_ind(profile_ind: usize, is_extrusion: bool, vertex_side: VertexSide)
         }
 }
 
-fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Color, smooth_sides: bool) -> Vec<Vertex> {
+fn create_vertices(
+    profile: &Profile,
+    plane: &Plane,
+    thickness: f32,
+    color: &Color,
+    smooth_edges: Option<Vec<bool>>,
+) -> Vec<Vertex> {
     let offset = *plane.normal() * thickness;
     let positions: Vec<Vec3> = profile
         .iter_pts()
@@ -41,7 +47,7 @@ fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Col
             [position, position + offset]
         })
         .collect();
-    let n = positions.len();
+    let num_positions = positions.len();
 
     positions
         .iter()
@@ -51,8 +57,8 @@ fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Col
             let is_hole = i >= profile.outline().len() * 2;
 
             let (prev, next, opposite) = (
-                positions[(n + i - 2) % n] - position,
-                positions[(i + 2) % n] - position,
+                positions[(num_positions + i - 2) % num_positions] - position,
+                positions[(i + 2) % num_positions] - position,
                 positions[if is_extrusion { i - 1 } else { i + 1 }] - position,
             );
 
@@ -60,9 +66,15 @@ fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Col
                 (if is_hole ^ is_extrusion { prev.cross(opposite) } else { opposite.cross(prev) }).normalize();
             let mut next_normal =
                 (if is_hole ^ is_extrusion { opposite.cross(next) } else { next.cross(opposite) }).normalize();
-            if smooth_sides {
-                prev_normal = (prev_normal + next_normal) / 2.;
-                next_normal = prev_normal;
+            if let Some(smooth_edge_map) = &smooth_edges
+                && smooth_edge_map[i / 2]
+            {
+                if smooth_edge_map[(num_positions + i - 1) % profile.num_pts()] {
+                    prev_normal = (prev_normal + next_normal) / 2.;
+                }
+                if smooth_edge_map[(i + 1) % profile.num_pts()] {
+                    next_normal = prev_normal;
+                }
             }
             // TODO: this won't work when connecting two independently created planes
             let opposite_normal = opposite.mul(-1.).normalize();
@@ -136,8 +148,14 @@ fn create_indices(profile: &Profile, vertices: &[Vertex]) -> Vec<u16> {
     indices
 }
 
-pub fn extrude_profile(profile: &Profile, plane: &Plane, thickness: f32, color: &Color, smooth_sides: bool) -> Mesh {
-    let vertices = create_vertices(profile, plane, thickness, color, smooth_sides);
+pub fn extrude_profile(
+    profile: &Profile,
+    plane: &Plane,
+    thickness: f32,
+    color: &Color,
+    smooth_edges: Option<Vec<bool>>,
+) -> Mesh {
+    let vertices = create_vertices(profile, plane, thickness, color, smooth_edges);
     let indices = create_indices(profile, &vertices);
     Mesh { vertices, indices, texture: None }
 }

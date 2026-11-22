@@ -49,6 +49,7 @@ impl LatheProfile {
         &self.normals
     }
 
+    #[allow(unused)]
     pub fn normal(&self, ind: usize) -> &Vec2 {
         &self.normals[ind]
     }
@@ -57,6 +58,7 @@ impl LatheProfile {
         self.points.len()
     }
 
+    #[allow(unused)]
     pub fn is_empty(&self) -> bool {
         self.points.is_empty()
     }
