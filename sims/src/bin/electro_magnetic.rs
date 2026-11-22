@@ -26,8 +26,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // wire_loop = create_wire_loop_mesh(positions);
 
     loop {
-        lightbulb.draw();
         light_switch.draw();
+        lightbulb.draw();
 
         camera.update(false);
 

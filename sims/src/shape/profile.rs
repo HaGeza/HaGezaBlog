@@ -2,6 +2,7 @@ use std::ops::Index;
 
 use macroquad::math::Vec2;
 
+#[derive(Debug)]
 pub struct Profile {
     outline: Vec<Vec2>,
     holes: Vec<Vec<Vec2>>,

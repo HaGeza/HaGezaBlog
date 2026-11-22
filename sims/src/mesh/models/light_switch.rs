@@ -100,7 +100,7 @@ impl LightSwitch {
                     &Plane::from_basis(vec3(params.toggle.thickness / 2., 0., 0.), [Vec3::Z, Vec3::Y]),
                     params.toggle.thickness,
                     &params.toggle.color,
-                    true,
+                    false,
                 ),
                 builder.build()?,
             ),

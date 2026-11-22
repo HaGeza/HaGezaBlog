@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use earcut::Earcut;
 use macroquad::{
     color::Color,
@@ -41,7 +43,6 @@ fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Col
         .collect();
     let n = positions.len();
 
-    // TODO: calculate the normals of the faces at each vertex
     positions
         .iter()
         .enumerate()
@@ -63,15 +64,12 @@ fn create_vertices(profile: &Profile, plane: &Plane, thickness: f32, color: &Col
                 prev_normal = (prev_normal + next_normal) / 2.;
                 next_normal = prev_normal;
             }
+            // TODO: this won't work when connecting two independently created planes
+            let opposite_normal = opposite.mul(-1.).normalize();
             [
                 Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: prev_normal.extend(0.) }, // previous side
                 Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: next_normal.extend(0.) }, // next side
-                Vertex {
-                    position,
-                    uv: Vec2::ZERO,
-                    color: (*color).into(),
-                    normal: (if is_extrusion { next.cross(prev) } else { prev.cross(next) }).normalize().extend(0.),
-                }, // top/bottom
+                Vertex { position, uv: Vec2::ZERO, color: (*color).into(), normal: opposite_normal.extend(0.) }, // top/bottom
             ]
         })
         .collect()

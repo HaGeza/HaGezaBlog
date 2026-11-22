@@ -7,6 +7,7 @@ pub struct Plane {
 }
 
 impl Plane {
+    #[allow(dead_code)]
     pub fn from_normal(origin: Vec3, normal: Vec3) -> Self {
         let normal = normal.normalize();
         let basis_u = normal.cross(if normal.y.abs() < 0.99 { Vec3::Y } else { Vec3::X }).normalize();
