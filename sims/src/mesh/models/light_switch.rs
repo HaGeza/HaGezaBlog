@@ -12,7 +12,7 @@ use crate::{
         extrusion_mesh::extrude_profile,
         frag_feature::FragFeatures,
         material::{MaterialBuilder, MaterialBuilderError},
-        models::model::{MeshWMaterial, draw_model},
+        models::model::{MeshWMaterial, draw_model, get_model_offset},
         plane::Plane,
     },
     shape::{
@@ -83,29 +83,26 @@ impl LightSwitch {
         let mut builder = MaterialBuilder::new();
         builder.add_frag_features(&scene_frags.frags)?;
 
-        Ok(LightSwitch {
-            frame: MeshWMaterial::basic(
-                extrude_profile(
-                    &Self::create_frame_profile(&params.frame)?,
-                    &Plane::from_basis(vec3(0., -params.frame.height, 0.), [Vec3::X, -Vec3::Z]),
-                    params.frame.height,
-                    &params.frame.color,
-                    None,
-                ),
-                builder.build()?,
-            ),
-            toggle: MeshWMaterial::basic(
-                extrude_profile(
-                    &Self::create_toggle_profile(&params.toggle)?,
-                    &Plane::from_basis(vec3(params.toggle.thickness / 2., 0., 0.), [Vec3::Z, Vec3::Y]),
-                    params.toggle.thickness,
-                    &params.toggle.color,
-                    Some(Self::create_toggle_smooth_edge_map(&params.toggle)),
-                ),
-                builder.build()?,
-            ),
-            model_matrix: Mat4::from_translation(params.position),
-        })
+        let frame_mesh = extrude_profile(
+            &Self::create_frame_profile(&params.frame)?,
+            &Plane::from_basis(vec3(0., -params.frame.height, 0.), [Vec3::X, -Vec3::Z]),
+            params.frame.height,
+            &params.frame.color,
+            None,
+        );
+        let toggle_mesh = extrude_profile(
+            &Self::create_toggle_profile(&params.toggle)?,
+            &Plane::from_basis(vec3(params.toggle.thickness / 2., 0., 0.), [Vec3::Z, Vec3::Y]),
+            params.toggle.thickness,
+            &params.toggle.color,
+            Some(Self::create_toggle_smooth_edge_map(&params.toggle)),
+        );
+
+        let model_offset = get_model_offset(&[&frame_mesh, &toggle_mesh]);
+        let frame = MeshWMaterial::basic(frame_mesh, builder.build()?);
+        let toggle = MeshWMaterial::basic(toggle_mesh, builder.build()?);
+
+        Ok(LightSwitch { frame, toggle, model_matrix: Mat4::from_translation(params.position + model_offset) })
     }
 
     fn create_frame_profile(params: &LightSwitchFrameParams) -> Result<Profile, LightSwitchProfileError> {

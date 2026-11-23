@@ -14,7 +14,7 @@ use crate::{
     mesh::{
         frag_feature::{FragFeature, FragFeatures},
         material::MaterialBuilderError,
-        models::model::{MeshWMaterial, draw_model},
+        models::model::{MeshWMaterial, draw_model, get_model_offset},
     },
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
@@ -114,7 +114,12 @@ impl LightBulb {
         let top_outer_profile = Self::create_top_outer_profile(&params.top, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
 
-        let model_matrix = Mat4::from_translation(params.position);
+        let bottom_mesh = create_lathe_mesh(&bottom_profile, params.num_rings, &params.bottom.color, false);
+        let top_inner_mesh = create_lathe_mesh(&top_outer_profile, params.num_rings, &params.top.color, true);
+        let top_outer_mesh = create_lathe_mesh(&top_inner_profile, params.num_rings, &params.top.color, false);
+
+        let model_offset = get_model_offset(&[&bottom_mesh, &top_inner_mesh, &top_outer_mesh]);
+        let model_matrix = Mat4::from_translation(params.position + model_offset);
 
         let point_light_y =
             top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
@@ -124,28 +129,23 @@ impl LightBulb {
         let mut builder = MaterialBuilder::new();
         builder.add_frag_feature(&point_light)?;
 
-        Ok(LightBulb {
-            bottom: MeshWMaterial::basic(
-                create_lathe_mesh(&bottom_profile, params.num_rings, &params.bottom.color, false),
-                builder.clone().add_frag_features(&scene_frags.frags)?.build()?,
-            ),
-            top_inner: MeshWMaterial::new(
-                create_lathe_mesh(&top_outer_profile, params.num_rings, &params.top.color, true),
-                builder.clone().set_transparency(true).add_frag_features(&scene_frags.frags)?.build()?,
-                true,
-            ),
-            top_outer: MeshWMaterial::new(
-                create_lathe_mesh(&top_inner_profile, params.num_rings, &params.top.color, false),
-                builder
-                    .clone()
-                    .set_transparency(true)
-                    .add_frag_features(&scene_frags.scale_lights(1. - params.top.color.a).frags)?
-                    .build()?,
-                true,
-            ),
-            point_light,
-            model_matrix,
-        })
+        let bottom = MeshWMaterial::basic(bottom_mesh, builder.clone().add_frag_features(&scene_frags.frags)?.build()?);
+        let top_inner = MeshWMaterial::new(
+            top_inner_mesh,
+            builder.clone().set_transparency(true).add_frag_features(&scene_frags.frags)?.build()?,
+            true,
+        );
+        let top_outer = MeshWMaterial::new(
+            top_outer_mesh,
+            builder
+                .clone()
+                .set_transparency(true)
+                .add_frag_features(&scene_frags.scale_lights(1. - params.top.color.a).frags)?
+                .build()?,
+            true,
+        );
+
+        Ok(LightBulb { bottom, top_inner, top_outer, point_light, model_matrix })
     }
 
     fn create_bottom_profile(params: &LightBulbBottomParams) -> Result<LatheProfile, LightBulbProfileError> {

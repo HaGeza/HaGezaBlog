@@ -1,6 +1,6 @@
 use macroquad::{
     material::{Material, gl_use_default_material, gl_use_material},
-    math::Mat4,
+    math::{Mat4, Vec3, vec3},
     models::{Mesh, draw_mesh},
     window::get_internal_gl,
 };
@@ -43,4 +43,13 @@ pub fn draw_model(mesh_w_material_list: &[&MeshWMaterial], model_matrix: &Mat4) 
     unsafe {
         get_internal_gl().quad_gl.pop_model_matrix();
     }
+}
+
+pub fn get_model_offset(meshes: &[&Mesh]) -> Vec3 {
+    let (cnt, sum_x, min_y, sum_z) =
+        meshes.iter().flat_map(|mesh| &mesh.vertices).fold((0, 0.0, f32::MAX, 0.0), |(cnt, sum_x, min_y, sum_z), v| {
+            (cnt + 1, sum_x + v.position.x, f32::min(min_y, v.position.y), sum_z + v.position.z)
+        });
+
+    vec3(-sum_x / cnt as f32, -min_y, -sum_z / cnt as f32)
 }
