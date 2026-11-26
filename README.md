@@ -2,4 +2,5 @@
 
 - The blog is available at: https://hageza.github.io/HaGezaBlog/
 - It currently contains:
-    - A lightbulb :O
+    - A light bulb 💡
+    - A light switch 💥 

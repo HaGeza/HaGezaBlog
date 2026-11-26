@@ -30,6 +30,7 @@ app/build
 package
 node_modules
 **/static/wasm/*
+**/static/configs/*
 
 # Vite
 vite.config.js.timestamp-*
