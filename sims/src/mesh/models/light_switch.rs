@@ -1,4 +1,4 @@
-use std::{f32::consts::FRAC_PI_2, iter, ops::Add, path::Path};
+use std::{f32::consts::FRAC_PI_2, iter, ops::Add};
 
 use macroquad::{
     color::Color,
@@ -144,8 +144,8 @@ impl LightSwitch {
             .collect()
     }
 
-    pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {
-        LightSwitch::new(load_config(config_path)?, scene_frags)
+    pub async fn from_config(config_path: &str, scene_frags: &FragFeatures) -> Result<LightSwitch, LightSwitchError> {
+        LightSwitch::new(load_config(config_path).await?, scene_frags)
     }
 
     pub fn draw(&self) {

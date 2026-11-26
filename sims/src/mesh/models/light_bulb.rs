@@ -1,7 +1,4 @@
-use std::{
-    f32::consts::{FRAC_PI_2, PI},
-    path::Path,
-};
+use std::f32::consts::{FRAC_PI_2, PI};
 
 use macroquad::{
     color::Color,
@@ -205,8 +202,8 @@ impl LightBulb {
         Ok(LatheProfile::new(&points)?)
     }
 
-    pub fn from_config(config_path: &Path, scene_frags: &FragFeatures) -> Result<LightBulb, LightBulbError> {
-        LightBulb::new(load_config(config_path)?, scene_frags)
+    pub async fn from_config(config_path: &str, scene_frags: &FragFeatures) -> Result<LightBulb, LightBulbError> {
+        LightBulb::new(load_config(config_path).await?, scene_frags)
     }
 
     pub fn get_point_light(&self) -> &FragFeature {

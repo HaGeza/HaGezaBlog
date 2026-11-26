@@ -1,4 +1,4 @@
-use std::{ops::Mul, path::Path};
+use std::ops::Mul;
 
 use crate::util::config::{ConfigLoadError, deserialize_vec3, load_config};
 use macroquad::math::Vec3;
@@ -31,8 +31,8 @@ pub struct FragFeatures {
 }
 
 impl FragFeatures {
-    pub fn from_config(config_path: &Path) -> Result<FragFeatures, ConfigLoadError> {
-        load_config(config_path)
+    pub async fn from_config(config_path: &str) -> Result<FragFeatures, ConfigLoadError> {
+        load_config(config_path).await
     }
 
     pub fn scale_lights(&self, scalar: f32) -> FragFeatures {

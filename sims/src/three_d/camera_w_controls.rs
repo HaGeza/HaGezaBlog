@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 
 use crate::util::config::{ConfigLoadError, deserialize_vec2, load_config};
 use macroquad::prelude::*;
@@ -31,7 +31,7 @@ fn _get_camera_relative_position(longitude: f32, latitude: f32, radius: f32) -> 
 }
 
 impl CameraWControls {
-    pub fn from_config(config_path: &Path) -> Result<Self, ConfigLoadError> {
+    pub async fn from_config(config_path: &str) -> Result<Self, ConfigLoadError> {
         #[derive(Deserialize)]
         struct CameraWControlsConfig {
             longitude: f32,
@@ -52,7 +52,7 @@ impl CameraWControls {
             z_far: f32,
         }
 
-        let config: CameraWControlsConfig = load_config(config_path)?;
+        let config: CameraWControlsConfig = load_config(config_path).await?;
 
         let longitude = config.longitude;
         let latitude = config.latitude;

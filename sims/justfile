@@ -9,19 +9,22 @@ wasm sim="":
     #!/usr/bin/env bash
     set -e
     
+    mkdir -p ../app/static/configs
     mkdir -p ../app/static/wasm
 
     if [ -z "{{sim}}" ]; then
         echo "Building all binaries..."
         cargo build --release --target wasm32-unknown-unknown
         
+        find configs/ -maxdepth 1 -type d -exec cp -r {} ../app/static/configs/ \;
         find target/wasm32-unknown-unknown/release -maxdepth 1 -name "*.wasm" -exec cp {} ../app/static/wasm/ \;
-        echo "Successfully copied all WASM files to ../app/static/wasm/"
+        echo "Successfully copied all WASMs and configs files to ../app/static/"
     else
         echo "Building simulation: {{sim}}..."
         cargo build --release --target wasm32-unknown-unknown --bin {{sim}}
+        cp -r configs/{{sim}} ../app/static/configs/
         cp target/wasm32-unknown-unknown/release/{{sim}}.wasm ../app/static/wasm/
-        echo "Successfully copied {{sim}}.wasm to ../app/static/wasm/"
+        echo "Successfully copied {{sim}} WASM and configs into ../app/static"
     fi
     #
 # Build and run a simulation locally
