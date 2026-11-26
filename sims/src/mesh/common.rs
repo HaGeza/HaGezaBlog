@@ -1,26 +1,43 @@
-use macroquad::{math::Vec3, models::Mesh};
+use macroquad::{math::Vec3, ui::Vertex};
 
 use crate::vec3_relative_eq;
 
 /// Return `true` if `pos_a`, `pos_b`, `pos_c` define a (non-empty) triangle, `false` otherwise
-pub(super) fn is_non_empty_triangle(positions: &[Vec3; 3]) -> bool {
+fn is_non_empty_triangle(positions: &[Vec3; 3]) -> bool {
     !vec3_relative_eq!(positions[0], positions[1])
         && !vec3_relative_eq!(positions[0], positions[2])
         && !vec3_relative_eq!(positions[1], positions[2])
 }
 
-#[allow(dead_code)]
-fn combine_meshes(mesh_a: &Mesh, mesh_b: &Mesh) -> Mesh {
-    Mesh {
-        vertices: mesh_a.vertices.iter().chain(mesh_b.vertices.iter()).cloned().collect(),
-        indices: mesh_a
-            .indices
-            .iter()
-            .cloned()
-            .chain(mesh_b.indices.iter().map(|i| i + mesh_a.vertices.len() as u16))
-            .collect(),
-        texture: None,
+pub(super) fn add_face(vertices: &[Vertex], indices: &mut Vec<u16>, mut face_indices: [u16; 3], reverse_faces: bool) {
+    if is_non_empty_triangle(&[
+        vertices[face_indices[0] as usize].position,
+        vertices[face_indices[1] as usize].position,
+        vertices[face_indices[2] as usize].position,
+    ]) {
+        if reverse_faces {
+            face_indices.reverse();
+        }
+        indices.extend(face_indices);
     }
+}
+
+pub(super) struct RectangleFaceCorners {
+    pub bot_left: u16,
+    pub top_left: u16,
+    pub bot_right: u16,
+    pub top_right: u16,
+}
+
+pub(super) fn add_rectangle_face(
+    vertices: &[Vertex],
+    indices: &mut Vec<u16>,
+    corners: RectangleFaceCorners,
+    reverse_faces: bool,
+) {
+    // Add non-empty new faces in counterclockwise vertex order
+    add_face(vertices, indices, [corners.top_left, corners.bot_left, corners.bot_right], reverse_faces);
+    add_face(vertices, indices, [corners.top_left, corners.bot_right, corners.top_right], reverse_faces);
 }
 
 #[cfg(test)]

@@ -11,6 +11,8 @@ use miniquad::{
 };
 use thiserror::Error;
 
+use crate::mesh::frag_feature::FragFeature;
+
 #[cfg(target_arch = "wasm32")]
 const SHADER_HEADER: &str = "#version 300 es\n";
 
@@ -92,12 +94,6 @@ impl FragOutput {
     }
 }
 
-pub enum FragFeature {
-    AmbientLight(Vec3),
-    DirectionalLight { direction: Vec3, color: Vec3 },
-    PointLight { position: Vec3, color: Vec3 },
-}
-
 #[derive(Clone)]
 enum UniformWithValue {
     Float3(Vec3),
@@ -170,9 +166,9 @@ impl MaterialBuilder {
         self
     }
 
-    fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
+    pub fn add_frag_feature(&mut self, frag_feature: &FragFeature) -> Result<(), MaterialBuilderError> {
         match frag_feature {
-            FragFeature::AmbientLight(color) => {
+            FragFeature::AmbientLight { value: color } => {
                 self.vert_outputs.insert(VertOutput::Color);
                 self.frag_outputs.insert(FragOutput::FinalColor);
 
@@ -296,11 +292,8 @@ void main() {{
 
 /// Draw transparent mesh
 ///
-/// # Safety
-///
-/// - The function is unsafe due to using GL directly.
-/// - It should be removed after https://github.com/not-fl3/miniquad/issues/670 is fixed
-pub unsafe fn draw_transparent_mesh(mesh: &Mesh) {
+/// This should be removed after https://github.com/not-fl3/miniquad/issues/670 is fixed
+pub fn draw_transparent_mesh(mesh: &Mesh) {
     unsafe {
         get_internal_gl().flush();
         gl::glDepthMask(GL_FALSE as u8);

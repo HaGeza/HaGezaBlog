@@ -1,19 +1,23 @@
-use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
+use std::f32::consts::{FRAC_PI_2, PI};
 
 use macroquad::{
-    color::{self, Color},
-    material::{Material, gl_use_default_material, gl_use_material},
-    math::{Vec2, vec2, vec3},
-    models::{Mesh, draw_mesh},
+    color::Color,
+    math::{Mat4, Vec2, Vec3, vec2, vec3},
 };
+use serde::Deserialize;
 use thiserror::Error;
 
 use crate::{
-    mesh::material::{FragFeature, MaterialBuilderError, draw_transparent_mesh},
+    mesh::{
+        frag_feature::{FragFeature, FragFeatures},
+        material::MaterialBuilderError,
+        models::model::{MeshWMaterial, draw_model, get_model_offset},
+    },
     shape::{
         common::{get_quadratic_bezier, get_semicircle},
         lathe_profile::{LatheProfile, LatheProfileError},
     },
+    util::config::{ConfigLoadError, deserialize_color, deserialize_vec3, load_config},
 };
 use crate::{
     mesh::{lathe_mesh::create_lathe_mesh, material::MaterialBuilder},
@@ -39,15 +43,8 @@ use crate::{
 //          ******              |
 //           ****           +---+
 
-struct LightBulbTopProfileParams {
-    head_num_sections: usize,
-    head_semicircle_radians: f32,
-    head_semicircle_radius: f32,
-    neck_num_sections: usize,
-}
-
 #[derive(Error, Debug)]
-enum LightBulbProfileError {
+pub enum LightBulbProfileError {
     #[error("too few head sections, cannot create semicircle")]
     TooFewSections,
     #[error("too small head semicircle radian, head and bottom profiles wouldn't intersect below head")]
@@ -60,100 +57,95 @@ enum LightBulbProfileError {
     IncorrectProfile(#[from] LatheProfileError),
 }
 
-struct LightBulbBottomProfileParams {
+#[derive(Deserialize)]
+struct LightBulbTopParams {
+    head_num_sections: usize,
+    head_radians: f32,
+    head_radius: f32,
+    neck_num_sections: usize,
+    #[serde(deserialize_with = "deserialize_color")]
+    color: Color,
+}
+
+#[derive(Deserialize)]
+struct LightBulbBottomParams {
     start_y: f32,
     half_width: f32,
     height: f32,
+    #[serde(deserialize_with = "deserialize_color")]
+    color: Color,
 }
 
+#[derive(Deserialize)]
 struct LightBulbParams {
-    top_profile_params: LightBulbTopProfileParams,
-    bottom_profile_params: LightBulbBottomProfileParams,
+    #[serde(deserialize_with = "deserialize_vec3")]
+    position: Vec3,
+    #[serde(deserialize_with = "deserialize_vec3")]
+    point_light_color: Vec3,
     num_rings: usize,
+    top: LightBulbTopParams,
+    bottom: LightBulbBottomParams,
 }
 
 #[derive(Error, Debug)]
-enum LightBulbError {
+pub enum LightBulbError {
     #[error("failed to create profile: {0}")]
     ProfileError(#[from] LightBulbProfileError),
     #[error("failed to build material: {0}")]
     MaterialError(#[from] MaterialBuilderError),
+    #[error("failed to load config: {0}")]
+    ConfigError(#[from] ConfigLoadError),
 }
 
 pub struct LightBulb {
-    bottom: Mesh,
-    top_inner: Mesh,
-    top_outer: Mesh,
-    bottom_material: Material,
-    top_outer_material: Material,
-    top_inner_material: Material,
+    bottom: MeshWMaterial,
+    top_inner: MeshWMaterial,
+    top_outer: MeshWMaterial,
+    point_light: FragFeature,
+    model_matrix: Mat4,
 }
 
 impl LightBulb {
-    fn new(params: LightBulbParams) -> Result<Self, LightBulbError> {
-        let bottom_profile = Self::create_bottom_profile(params.bottom_profile_params)?;
-        let top_outer_profile = Self::create_top_outer_profile(params.top_profile_params, &bottom_profile)?;
+    fn new(params: LightBulbParams, scene_frags: &FragFeatures) -> Result<Self, LightBulbError> {
+        let bottom_profile = Self::create_bottom_profile(&params.bottom)?;
+        let top_outer_profile = Self::create_top_outer_profile(&params.top, &bottom_profile)?;
         let top_inner_profile = top_outer_profile.scale(0.98);
+
+        let bottom_mesh = create_lathe_mesh(&bottom_profile, params.num_rings, &params.bottom.color, false);
+        let top_inner_mesh = create_lathe_mesh(&top_outer_profile, params.num_rings, &params.top.color, true);
+        let top_outer_mesh = create_lathe_mesh(&top_inner_profile, params.num_rings, &params.top.color, false);
+
+        let model_offset = get_model_offset(&[&bottom_mesh, &top_inner_mesh, &top_outer_mesh]);
+        let model_matrix = Mat4::from_translation(params.position + model_offset);
 
         let point_light_y =
             top_outer_profile.points().iter().map(|pt| pt.y).sum::<f32>() / top_outer_profile.points().len() as f32;
-        let top_alpha = 0.4;
-        let (light_direciton, directional_light_color) = (vec3(1., 1., 0.), vec3(0.1, 0.1, 0.1));
+        let point_light_pos = model_matrix.transform_point3(vec3(0., point_light_y, 0.));
+        let point_light = FragFeature::PointLight { position: point_light_pos, color: params.point_light_color };
 
         let mut builder = MaterialBuilder::new();
-        builder.add_frag_features(&[
-            FragFeature::AmbientLight(vec3(0.1, 0.1, 0.1)),
-            FragFeature::PointLight { position: vec3(0., point_light_y, 0.), color: vec3(0.8, 0.6, 0.2) },
-        ])?;
+        builder.add_frag_feature(&point_light)?;
 
-        let top_color = &Color::new(1., 1., 1., top_alpha);
-        let bottom_color = &color::RED;
-
-        Ok(LightBulb {
-            bottom: create_lathe_mesh(&bottom_profile, params.num_rings, bottom_color, false),
-            top_inner: create_lathe_mesh(&top_outer_profile, params.num_rings, top_color, true),
-            top_outer: create_lathe_mesh(&top_inner_profile, params.num_rings, top_color, false),
-            bottom_material: builder
-                .clone()
-                .add_frag_features(&[FragFeature::DirectionalLight {
-                    direction: light_direciton,
-                    color: directional_light_color,
-                }])?
-                .build()?,
-            top_outer_material: builder
+        let bottom = MeshWMaterial::basic(bottom_mesh, builder.clone().add_frag_features(&scene_frags.frags)?.build()?);
+        let top_inner = MeshWMaterial::new(
+            top_inner_mesh,
+            builder.clone().set_transparency(true).add_frag_features(&scene_frags.frags)?.build()?,
+            true,
+        );
+        let top_outer = MeshWMaterial::new(
+            top_outer_mesh,
+            builder
                 .clone()
                 .set_transparency(true)
-                .add_frag_features(&[FragFeature::DirectionalLight {
-                    direction: light_direciton,
-                    color: directional_light_color,
-                }])?
+                .add_frag_features(&scene_frags.scale_lights(1. - params.top.color.a).frags)?
                 .build()?,
-            top_inner_material: builder
-                .clone()
-                .set_transparency(true)
-                .add_frag_features(&[FragFeature::DirectionalLight {
-                    direction: light_direciton,
-                    color: directional_light_color * (1. - top_alpha),
-                }])?
-                .build()?,
-        })
+            true,
+        );
+
+        Ok(LightBulb { bottom, top_inner, top_outer, point_light, model_matrix })
     }
 
-    pub fn draw(&self) {
-        gl_use_material(&self.bottom_material);
-        draw_mesh(&self.bottom);
-        gl_use_material(&self.top_inner_material);
-        unsafe {
-            draw_transparent_mesh(&self.top_inner);
-        }
-        gl_use_material(&self.top_outer_material);
-        unsafe {
-            draw_transparent_mesh(&self.top_outer);
-        }
-        gl_use_default_material();
-    }
-
-    fn create_bottom_profile(params: LightBulbBottomProfileParams) -> Result<LatheProfile, LightBulbProfileError> {
+    fn create_bottom_profile(params: &LightBulbBottomParams) -> Result<LatheProfile, LightBulbProfileError> {
         Ok(LatheProfile::new(&[
             vec2(0., params.start_y),
             vec2(params.half_width, params.start_y),
@@ -163,25 +155,21 @@ impl LightBulb {
     }
 
     fn create_top_outer_profile(
-        params: LightBulbTopProfileParams,
+        params: &LightBulbTopParams,
         bottom_profile: &LatheProfile,
     ) -> Result<LatheProfile, LightBulbProfileError> {
         if params.head_num_sections < 2 {
             return Err(LightBulbProfileError::TooFewSections);
         }
-        if params.head_semicircle_radians <= FRAC_PI_2 {
+        if params.head_radians <= FRAC_PI_2 {
             return Err(LightBulbProfileError::TooSmallAngle);
         }
-        if params.head_semicircle_radians >= PI {
+        if params.head_radians >= PI {
             return Err(LightBulbProfileError::TooLargeAngle);
         }
 
-        let head_semicircle: Vec<Vec2> = get_semicircle(
-            params.head_semicircle_radius,
-            FRAC_PI_2 - params.head_semicircle_radians,
-            FRAC_PI_2,
-            params.head_num_sections,
-        );
+        let head_semicircle: Vec<Vec2> =
+            get_semicircle(params.head_radius, FRAC_PI_2 - params.head_radians, FRAC_PI_2, params.head_num_sections);
 
         if head_semicircle[0].y >= 0. || head_semicircle[1].y >= 0. {
             // The last section of the glass bulb profile should be in the fourth quarter.
@@ -213,44 +201,16 @@ impl LightBulb {
 
         Ok(LatheProfile::new(&points)?)
     }
-}
 
-const HEAD_SEMICIRCLE_DEFAULT_RADIUS: f32 = 2.;
-const BOTTOM_DEFAULT_HALF_WIDTH: f32 = HEAD_SEMICIRCLE_DEFAULT_RADIUS / 2.5;
-const BOTTOM_DEFAULT_HEIGHT: f32 = BOTTOM_DEFAULT_HALF_WIDTH;
-const BOTTOM_DEFAULT_START_Y: f32 = -HEAD_SEMICIRCLE_DEFAULT_RADIUS * 1.25 - BOTTOM_DEFAULT_HEIGHT;
+    pub async fn from_config(config_path: &str, scene_frags: &FragFeatures) -> Result<LightBulb, LightBulbError> {
+        LightBulb::new(load_config(config_path).await?, scene_frags)
+    }
 
-const HEAD_DEFAULT_NUM_SECTIONS: usize = 20;
-const HEAD_SEMICIRCLE_DEFAULT_RADIANS: f32 = 3. * FRAC_PI_4;
-const NECK_DEFAULT_NUM_SECTIONS: usize = HEAD_DEFAULT_NUM_SECTIONS / 5;
-const NUM_RINGS: usize = HEAD_DEFAULT_NUM_SECTIONS + NECK_DEFAULT_NUM_SECTIONS;
+    pub fn get_point_light(&self) -> &FragFeature {
+        &self.point_light
+    }
 
-pub fn get_light_bulb() -> LightBulb {
-    LightBulb::new(LightBulbParams {
-        top_profile_params: LightBulbTopProfileParams {
-            head_num_sections: HEAD_DEFAULT_NUM_SECTIONS,
-            head_semicircle_radians: HEAD_SEMICIRCLE_DEFAULT_RADIANS,
-            head_semicircle_radius: HEAD_SEMICIRCLE_DEFAULT_RADIUS,
-            neck_num_sections: NECK_DEFAULT_NUM_SECTIONS,
-        },
-        bottom_profile_params: LightBulbBottomProfileParams {
-            start_y: BOTTOM_DEFAULT_START_Y,
-            half_width: BOTTOM_DEFAULT_HALF_WIDTH,
-            height: BOTTOM_DEFAULT_HEIGHT,
-        },
-        num_rings: NUM_RINGS,
-    })
-    .unwrap()
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_create_light_bulb_top_mesh_works() {}
-
-    #[test]
-    fn test_create_light_bulb_bottom_mesh_works() {}
-
-    #[test]
-    fn test_create_light_bulb_mesh_works() {}
+    pub fn draw(&self) {
+        draw_model(&[&self.bottom, &self.top_inner, &self.top_outer], &self.model_matrix)
+    }
 }
