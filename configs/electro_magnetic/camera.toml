@@ -1,0 +1,29 @@
+# Initial camera position
+longitude = 0.0
+latitude = 0.7853981633974483  # π/4 radians (45 degrees)
+radius = 10.0
+
+# Mouse sensitivity for rotating around the target
+rotate_mouse_sensitivity = [0.5, 0.5]
+
+# Mouse sensitivity for panning the camera
+pan_mouse_sensitivity = [1.0, 1.0]
+
+# Mouse wheel sensitivity for zooming
+zoom_mouse_sensitivity = 0.05
+
+# Touch sensitivity for rotating around the target
+rotate_touch_sensitivity = [0.025, 0.025]
+
+# Touch sensitivity for panning the camera
+pan_touch_sensitivity = [0.2, 0.2]
+
+# Touch wheel sensitivity for zooming
+zoom_touch_sensitivity = 0.025
+
+# Camera clipping planes
+z_near = 0.01
+z_far = 100.0
+
+# Threshold for touch distance change required for zooming, as screen diagonal ratio
+touch_zoom_threshold = 0.01

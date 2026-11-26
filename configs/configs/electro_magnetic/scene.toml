@@ -1,0 +1,8 @@
+[[frags]]
+kind = "directional_light"
+direction = [1.0, 1.0, 0.0]
+color = [0.5, 0.5, 0.5]
+
+[[frags]]
+kind = "ambient_light"
+value = [0.1, 0.1, 0.1]
